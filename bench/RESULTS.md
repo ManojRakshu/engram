@@ -1,31 +1,37 @@
 # Benchmark results
 
-Harness: claude-code · model: haiku · 48 runs (6 errored runs excluded; 1 timeouts counted as failures)
+Harness: claude-code · model: haiku · 108 runs (0 errored runs excluded; 0 timeouts counted as failures)
 
 | setup | pass | mean input tok | median input tok | mean uncached in | mean output | mean tool calls | mean time | total $ |
 |---|---|---|---|---|---|---|---|---|
-| baseline | 14/14 | 106,649 | 98,223 | 9,645 | 1,578 | 4.4 | 13.6s | 0.052 |
-| cold | 16/18 | 111,564 | 105,820 | 11,761 | 1,591 | 3.8 | 22.2s | 0.070 |
-| warm | 16/16 | 97,861 | 91,672 | 11,305 | 1,420 | 3.6 | 13.5s | 0.061 |
+| baseline | 36/36 | 119,242 | 114,023 | 7,943 | 1,325 | 4.5 | 12.4s | 0.121 |
+| warm | 35/36 | 135,575 | 97,992 | 10,791 | 1,745 | 4.8 | 14.9s | 0.154 |
+| cold | 35/36 | 106,572 | 97,648 | 9,934 | 1,265 | 3.9 | 12.1s | 0.129 |
 
 Cost of a fix:
 
 | setup | input tokens per fixed bug | $ per fixed bug | fixed bugs per hour (serial) | calls by type (mean per run) |
 |---|---|---|---|---|
-| baseline | 106,649 | 0.0037 | 265 | Bash 2.8, Edit 1.0, Read 0.5, Grep 0.1 |
-| cold | 118,537 | 0.0044 | 153 | Bash 1.6, Read 1.1, Edit 1.0, Monitor 0.1 |
-| warm | 97,861 | 0.0038 | 266 | Bash 1.6, Read 1.0, Edit 1.0 |
+| baseline | 119,242 | 0.0034 | 290 | Bash 2.8, Edit 1.0, Read 0.7 |
+| warm | 139,449 | 0.0044 | 234 | Bash 2.7, Read 1.1, Edit 1.0 |
+| cold | 109,617 | 0.0037 | 289 | Bash 1.8, Read 1.1, Edit 1.0 |
 
 Per task (median input tokens / tool calls, pass count):
 
-| task | baseline | cold | warm |
+| task | baseline | warm | cold |
 |---|---|---|---|
-| sspl-level | 94,112 / 4 (3/3) | 76,359 / 2 (3/3) | 76,455 / 2 (3/3) |
-| components-bfs | 98,678 / 4 (3/3) | 106,221 / 4 (3/3) | 104,211 / 4 (3/3) |
-| triangles-selfloop | 101,960 / 5 (3/3) | 109,014 / 5 (3/3) | 138,003 / 4 (3/3) |
-| topo-generations | 93,942 / 4 (3/3) | 105,820 / 3 (3/3) | 79,133 / 3 (3/3) |
-| bellman-count | 211,657 / 8 (1/1) | 139,148 / 5 (2/3) | 122,399 / 5 (2/2) |
-| dijkstra-relax | 93,038 / 3 (1/1) | 78,393 / 2.5 (2/2) | 78,334 / 2.5 (2/2) |
+| clamp-max | 89,211 / 3 (3/3) | 98,335 / 3 (3/3) | 100,002 / 3 (3/3) |
+| clamp-open | 91,405 / 4 (3/3) | 73,665 / 2 (3/3) | 73,826 / 3 (3/3) |
+| bool-on | 113,680 / 4 (3/3) | 96,870 / 3 (3/3) | 121,362 / 4 (3/3) |
+| split-opt | 192,738 / 10 (3/3) | 634,384 / 21 (2/3) | 166,019 / 6 (2/3) |
+| short-help | 111,871 / 4 (3/3) | 72,828 / 4 (3/3) | 74,379 / 5 (3/3) |
+| measure-table | 116,990 / 4 (3/3) | 125,529 / 4 (3/3) | 101,747 / 4 (3/3) |
+| choice-case | 112,724 / 4 (3/3) | 76,517 / 3 (3/3) | 74,589 / 2 (3/3) |
+| envvar-auto | 89,909 / 3 (3/3) | 75,486 / 3 (3/3) | 74,937 / 3 (3/3) |
+| envvar-nested | 115,501 / 4 (3/3) | 97,648 / 4 (3/3) | 96,747 / 3 (3/3) |
+| eager-order | 115,260 / 5 (3/3) | 124,456 / 5 (3/3) | 97,052 / 4 (3/3) |
+| style-bold | 86,439 / 3 (3/3) | 75,766 / 3 (3/3) | 94,334 / 3 (3/3) |
+| join-options | 125,188 / 6 (3/3) | 128,880 / 6 (3/3) | 124,256 / 4 (3/3) |
 
-- **cold vs baseline:** total input tokens -5% lower on average; per-task geometric mean ratio 0.91 (9% lower); tool calls 14% fewer; cost per run -12% lower; wins on 3/6 tasks.
-- **warm vs baseline:** total input tokens 8% lower on average; per-task geometric mean ratio 0.88 (12% lower); tool calls 18% fewer; cost per run -4% lower; wins on 4/6 tasks.
+- **warm vs baseline:** total input tokens -14% lower on average; per-task geometric mean ratio 0.98 (2% lower); tool calls -7% fewer; cost per run -27% lower; wins on 7/12 tasks.
+- **cold vs baseline:** total input tokens 11% lower on average; per-task geometric mean ratio 0.88 (12% lower); tool calls 14% fewer; cost per run -7% lower; wins on 9/12 tasks.

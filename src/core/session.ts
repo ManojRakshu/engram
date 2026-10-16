@@ -165,6 +165,12 @@ export class EngramSession {
   }
 
   async afterCommand(cmd: string, ok: boolean, output = ""): Promise<string | undefined> {
+    // Agents mostly search through the shell (grep/rg/ag/git grep), not a Grep tool: hint there too.
+    const search = /^\s*(?:cd [^&;]+(?:&&|;)\s*)?(?:grep|rg|ag|git grep)\b(.*)$/.exec(cmd);
+    if (search && this.config.jit) {
+      const pattern = [...search[1].matchAll(/"([^"]+)"|'([^']+)'|(\S+)/g)].map((m) => m[1] ?? m[2] ?? m[3]).find((a) => !a.startsWith("-") && !/[/.]\w+$/.test(a)) ?? "";
+      if (pattern) return this.afterSearch(pattern, output);
+    }
     const isTest = /\b(pytest|test|vitest|jest|cargo test|go test)\b/.test(cmd);
     if (isTest) this.state.lastVerifyOk = ok;
     if (this.config.memory && this.state.graphSession) await recordCommand(this.graph, this.state.graphSession, cmd, ok);

@@ -159,3 +159,16 @@
 {"agent":"cc-warm-triangles-selfloop-2","event":"SessionEnd","ms":25,"injected":0}
 {"agent":"cc-cold-triangles-selfloop-2","event":"Stop","ms":44,"injected":0}
 {"agent":"cc-cold-triangles-selfloop-2","event":"SessionEnd","ms":42,"injected":0}
+{"agent":"cc-warm-topo-generations-2","event":"UserPromptSubmit","ms":262,"injected":242}
+{"agent":"cc-warm-topo-generations-2","event":"PostToolUse","tool":"Read","ms":43,"injected":26}
+{"agent":"cc-warm-topo-generations-2","event":"PreToolUse","tool":"Edit","ms":35,"injected":0}
+{"agent":"cc-warm-topo-generations-2","event":"PostToolUse","tool":"Edit","ms":392,"injected":50}
+{"agent":"cc-warm-topo-generations-2","event":"PostToolUse","tool":"Bash","ms":32,"injected":0}
+{"agent":"cc-warm-topo-generations-2","event":"Stop","ms":48,"injected":0}
+{"agent":"cc-warm-topo-generations-2","event":"SessionEnd","ms":21,"injected":0}
+{"agent":"cc-cold-topo-generations-2","event":"UserPromptSubmit","ms":194,"injected":189}
+{"agent":"cc-warm-bellman-count-2","event":"UserPromptSubmit","ms":223,"injected":248}
+{"agent":"cc-cold-topo-generations-2","event":"PostToolUse","tool":"Read","ms":24,"injected":26}
+{"agent":"cc-warm-bellman-count-2","event":"PostToolUse","tool":"Read","ms":24,"injected":31}
+{"agent":"cc-warm-bellman-count-2","event":"SessionEnd","ms":23,"injected":0}
+{"agent":"cc-cold-topo-generations-2","event":"SessionEnd","ms":23,"injected":0}

@@ -15,6 +15,7 @@ export interface PackItem {
   doc: string;
   score: number;
   why: string[]; // human-readable provenance: the graph path that put this item in the pack
+  callees?: string[]; // next hop for the top items: "qualname (path:line)"
   body?: string;
 }
 
@@ -360,6 +361,22 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
       : [],
   ]);
 
+  // The next hop: what the top items call. Bugs often sit one call below the function whose
+  // name matches the report (a caller gets "fixed" instead of the culprit otherwise).
+  if (items.length) {
+    const nexts = await g.read<{ id: string; callees: string[] }>(
+      "pack.callees",
+      `UNWIND $ids AS id MATCH (s:Symbol {id: id})-[:CALLS]->(c:Symbol) WHERE NOT c.isTest
+       WITH s, c ORDER BY c.path = s.path DESC, coalesce(c.rank, 0) DESC
+       RETURN s.id AS id, collect(c.qualname + ' (' + c.path + ':' + toString(c.startLine) + ')')[0..2] AS callees`,
+      { ids: items.slice(0, 3).map((i) => i.id) },
+    );
+    for (const n of nexts) {
+      const it = items.find((i) => i.id === n.id);
+      if (it) it.callees = n.callees;
+    }
+  }
+
   // 5. Fit the budget: signatures for everything, full bodies for the top few small symbols.
   const pack: Pack = {
     task,
@@ -455,7 +472,7 @@ export function renderCompact(p: Pack, maxItems = p.confidence.level === "low" ?
   for (const it of p.items.slice(0, maxItems)) {
     const qual = it.id.split("#")[1]?.replace(/@\d+$/, "") ?? it.name;
     const why = it.why[0]?.replace(/`/g, "").replace(/^matches task terms /, "") ?? "";
-    lines.push(`- ${it.path}:${it.startLine}-${it.endLine} ${qual}${why ? ` (${why.slice(0, 60)})` : ""}`);
+    lines.push(`- ${it.path}:${it.startLine}-${it.endLine} ${qual}${why ? ` (${why.slice(0, 60)})` : ""}${it.callees?.length ? ` → calls ${it.callees.join(", ")}` : ""}`);
   }
   if (p.tests.length) lines.push(`Tests: ${p.tests.slice(0, 3).join(", ")}`);
   for (const l of p.lessons.slice(0, 2)) lines.push(`Lesson: ${l.text}${l.about ? ` (${l.about})` : ""}`);
