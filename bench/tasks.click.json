@@ -87,5 +87,7 @@
       "new": "    rv.sort(key=lambda x: -x[0])",
       "symptom": "In `--help`, options are listed long-form first (`--verbose, -v`) instead of the usual short-form first (`-v, --verbose`)."
     }
-  ]
+  ],
+  "venv": "../.venv-click",
+  "pythonpath": "src"
 }

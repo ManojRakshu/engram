@@ -1,7 +1,7 @@
 /**
  * Engram benchmark: same model, same tasks, same harness (pi) — with and without the graph.
  *
- *   npx tsx bench/run.ts --suite bench/tasks.click.json --root ../engram-targets/click-bench \
+ *   npx tsx bench/run.ts --suite bench/tasks.click.json --repo ../engram-targets/click \
  *        --configs baseline,cold,warm --reps 2 [--only clamp-max,bool-on] [--model amazon-bedrock/<id>]
  *
  * A run passes when the repo's full test suite passes after the agent finishes.
@@ -21,7 +21,8 @@ import { close, latencyStats, RepoGraph } from "../src/db.ts";
 import { ingestGit } from "../src/git.ts";
 import { indexRepo } from "../src/indexer/index.ts";
 import { createEngramExtension } from "../src/adapters/pi.ts";
-import { applyTask, loadSuite, resetRepo, runTests, type Task } from "./tasks.ts";
+import { loadSuite, runTests, snapshotWorkspace, type Task } from "./tasks.ts";
+import { rmSync } from "node:fs";
 
 type Config = "baseline" | "cold" | "warm";
 
@@ -31,7 +32,7 @@ const flag = (k: string, d?: string) => {
   return i >= 0 ? argv[i + 1] : d;
 };
 const suite = loadSuite(flag("suite", "bench/tasks.click.json")!);
-const root = path.resolve(flag("root", "../engram-targets/click-bench")!);
+const source = path.resolve(flag("repo", "../engram-targets/click")!); // clone with history
 const configs = flag("configs", "baseline,cold,warm")!.split(",") as Config[];
 const reps = Number(flag("reps", "1"));
 const only = flag("only")?.split(",");
@@ -39,7 +40,8 @@ const [provider, ...rest] = (flag("model") ?? process.env.ENGRAM_MODEL ?? "amazo
 const modelId = rest.join("/");
 const MAX_TOOL_CALLS = Number(flag("max-calls", "40"));
 const TIMEOUT_MS = Number(flag("timeout", String(8 * 60_000)));
-const venvBin = path.resolve(root, "../.venv-click/bin");
+const venvBin = path.resolve(source, suite.venv ?? "../.venv-click", "bin");
+const workRoot = mkdtempSync(path.join(os.tmpdir(), "engram-pi-bench-"));
 
 const tasks = suite.tasks.filter((t) => !only || only.includes(t.id));
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -64,7 +66,8 @@ async function wipeMemory(g: RepoGraph) {
 }
 
 async function runOne(config: Config, t: Task, rep: number) {
-  applyTask(root, suite, t);
+  const root = snapshotWorkspace(source, suite, t, path.join(workRoot, `${config}-${t.id}-${rep}`)); // leak-free
+  process.env.PYTHONPATH = path.join(root, suite.pythonpath ?? "src");
   const runtime = await ModelRuntime.create();
   const model = runtime.getModel(provider, modelId);
   if (!model) throw new Error(`model not found: ${provider}/${modelId}`);
@@ -144,6 +147,7 @@ async function runOne(config: Config, t: Task, rep: number) {
   session.dispose();
 
   const tests = runTests(root, suite, process.env);
+  rmSync(root, { recursive: true, force: true });
   if (g && graphSession) {
     await g.write("bench.outcome", "MATCH (s:Session {id: $id}) SET s.outcome = $o", { id: graphSession, o: tests.pass ? "success" : "failure" });
   }
@@ -161,8 +165,8 @@ async function runOne(config: Config, t: Task, rep: number) {
 
 async function main() {
   console.log(`model ${provider}/${modelId} · ${tasks.length} tasks × ${configs.join(",")} × ${reps} reps → ${out}`);
-  // Prepare graphs once (code + history layers), clean memory.
-  resetRepo(root, suite);
+  // Prepare graphs once (code + history layers) from the clean source, clean memory.
+  const root = source;
   for (const c of configs) {
     if (c === "baseline") continue;
     const g = await graphFor(c);
@@ -178,7 +182,6 @@ async function main() {
       for (const t of tasks) rows.push(await runOne(c, t, rep));
     }
   }
-  resetRepo(root, suite);
   summarize(rows);
   console.log("graph latency:", JSON.stringify(Object.fromEntries(Object.entries(latencyStats()).filter(([k]) => k.startsWith("pack.") || k.startsWith("mem.") || k.startsWith("coord.")))));
   await close();
@@ -198,7 +201,6 @@ function summarize(rows: Awaited<ReturnType<typeof runOne>>[]) {
 
 main().catch(async (e) => {
   console.error(e);
-  resetRepo(root, suite);
   await close();
   process.exit(1);
 });

@@ -28,7 +28,7 @@ const only = flag("only")?.split(",");
 const model = flag("model", "haiku")!;
 const parallel = Number(flag("parallel", "3"));
 const maxTurns = flag("max-turns", "40")!;
-const venvBin = path.resolve(source, "../.venv-click/bin");
+const venvBin = path.resolve(source, suite.venv ?? "../.venv-click", "bin");
 const pluginDir = path.resolve("plugin");
 const tasks = suite.tasks.filter((t) => !only || only.includes(t.id));
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -131,7 +131,7 @@ async function runOne(config: Config, t: Task, rep: number) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PATH: `${venvBin}:${process.env.PATH}`,
-    PYTHONPATH: path.join(dir, "src"), // test the worktree's code, not the editable install
+    PYTHONPATH: path.join(dir, suite.pythonpath ?? "src"), // test the workspace's code, not the editable install
     ENGRAM_REPO: graphName(config),
     ENGRAM_AGENT: `cc-${config}-${t.id}-${rep}`,
   };

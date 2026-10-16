@@ -46,5 +46,6 @@
       "new": "                        count_v = count.get(v, 0) + 1\n                        if count_v == 2:",
       "symptom": "`nx.bellman_ford_path_length` raises `NetworkXUnbounded` (\"Negative cycle detected\") on ordinary weighted graphs that have no negative cycles at all."
     }
-  ]
+  ],
+  "pythonpath": "."
 }

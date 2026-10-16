@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 export interface Task { id: string; file: string; old: string; new: string; symptom: string }
-export interface Suite { repo: string; sha: string; test: string; tasks: Task[] }
+export interface Suite { repo: string; sha: string; test: string; venv?: string; pythonpath?: string; tasks: Task[] }
 
 export const loadSuite = (p: string): Suite => JSON.parse(readFileSync(p, "utf8"));
 

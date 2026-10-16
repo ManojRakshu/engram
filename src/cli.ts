@@ -27,6 +27,11 @@ async function main() {
   // Adapters load lazily so a hook process only pays for what it uses.
   if (cmd === "mcp") return (await import("./adapters/mcp.js")).serveMcp(flags.get("root"));
   if (cmd === "hook") return (await import("./adapters/claude-code.js")).runClaudeCodeHook();
+  if (cmd === "run") {
+    const sep = process.argv.indexOf("--");
+    const task = process.argv.slice(3, sep < 0 ? undefined : sep).join(" ");
+    return (await import("./adapters/wrap.js")).runWrapped(task, sep < 0 ? [] : process.argv.slice(sep + 1));
+  }
   const g = await RepoGraph.open(repo);
   switch (cmd) {
     case "index": {
@@ -62,7 +67,7 @@ async function main() {
       console.log("languages:", languages().map((l) => `${l.id} (${l.extensions.join(" ")})`).join(", "));
       console.log("retrievers:");
       for (const [id, d] of Object.entries(RETRIEVERS)) console.log(`  ${id.padEnd(12)} ${d}`);
-      console.log("adapters: pi extension, Claude Code hooks/plugin, MCP server (any MCP client), CLI, HTTP");
+      console.log("adapters: pi extension, Claude Code hooks/plugin, MCP server (any MCP client), `engram run` wrapper (any CLI agent), HTTP");
       break;
     case "stats":
       console.log(latencyStats());
@@ -76,6 +81,7 @@ async function main() {
   why <path>                                   history, experts, lessons, sessions
   mcp                                          run the MCP server (stdio)
   hook                                         Claude Code hook handler (reads hook JSON on stdin)
+  run "<task>" -- <agent cmd {prompt}>         wrap any CLI agent (codex exec, gemini -p, aider…)
   plugins                                      list language adapters, retrievers, harness adapters
   forget                                       drop this repo's graph (full removal)`);
   }
