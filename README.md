@@ -127,7 +127,7 @@ Restart Claude Code and work as usual. Your first prompt in a repo indexes it (c
 git clone https://github.com/<owner>/engram ~/engram    # self-contained, no npm install needed
 ```
 ```json
-{ "mcpServers": { "engram": { "command": "~/engram/plugin/bin/engram", "args": ["mcp"] } } }
+{ "mcpServers": { "engram": { "command": "/absolute/path/to/engram/plugin/bin/engram", "args": ["mcp"] } } }
 ```
 
 **Any CLI agent** that takes a prompt argument:
