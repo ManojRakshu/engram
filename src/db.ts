@@ -1,0 +1,94 @@
+import { FalkorDB, type Graph } from "falkordb";
+import "dotenv/config";
+
+export type Params = Record<string, unknown>;
+
+/** Latency samples per named query, used for the p50/p99 numbers in the dashboard and benchmark. */
+const samples = new Map<string, number[]>();
+const MAX_SAMPLES = 2000;
+
+function record(name: string, ms: number) {
+  let arr = samples.get(name);
+  if (!arr) samples.set(name, (arr = []));
+  arr.push(ms);
+  if (arr.length > MAX_SAMPLES) arr.shift();
+}
+
+export function latencyStats() {
+  const out: Record<string, { n: number; p50: number; p95: number; p99: number }> = {};
+  for (const [name, arr] of samples) {
+    const s = [...arr].sort((a, b) => a - b);
+    const q = (p: number) => s[Math.min(s.length - 1, Math.floor(p * s.length))] ?? 0;
+    out[name] = { n: s.length, p50: round(q(0.5)), p95: round(q(0.95)), p99: round(q(0.99)) };
+  }
+  return out;
+}
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
+let client: FalkorDB | undefined;
+let connecting: Promise<FalkorDB> | undefined;
+
+export async function connect(): Promise<FalkorDB> {
+  if (client) return client;
+  connecting ??= FalkorDB.connect({
+    url: process.env.FALKORDB_URL ?? "falkor://localhost:6390",
+  }).then((c) => (client = c));
+  return connecting;
+}
+
+export async function close() {
+  await client?.close();
+  client = undefined;
+  connecting = undefined;
+}
+
+/** One graph per repository: `engram:<slug>`. Multi-tenancy is by graph, not by WHERE filters. */
+export function graphName(repo: string) {
+  return `engram:${repo}`;
+}
+
+export class RepoGraph {
+  constructor(
+    readonly repo: string,
+    private readonly g: Graph,
+  ) {}
+
+  static async open(repo: string) {
+    const db = await connect();
+    return new RepoGraph(repo, db.selectGraph(graphName(repo)));
+  }
+
+  /** Write query. `name` labels the latency sample. */
+  async write<T = Record<string, unknown>>(name: string, cypher: string, params: Params = {}) {
+    return this.run<T>(name, cypher, params, false);
+  }
+
+  /** Read-only query (GRAPH.RO_QUERY) — every agent-facing tool goes through this. */
+  async read<T = Record<string, unknown>>(name: string, cypher: string, params: Params = {}) {
+    return this.run<T>(name, cypher, params, true);
+  }
+
+  private async run<T>(name: string, cypher: string, params: Params, ro: boolean): Promise<T[]> {
+    const t0 = performance.now();
+    const opts = { params: params as never, TIMEOUT: 5000 };
+    try {
+      const res = ro ? await this.g.roQuery<T>(cypher, opts) : await this.g.query<T>(cypher, opts);
+      return (res.data ?? []) as T[];
+    } catch (e) {
+      // A graph is created on first write; reading one that doesn't exist yet is just "no rows".
+      if (ro && String((e as Error).message).includes("empty key")) return [];
+      throw new Error(`[${name}] ${(e as Error).message}`);
+    } finally {
+      record(name, performance.now() - t0);
+    }
+  }
+
+  async drop() {
+    try {
+      await this.g.delete();
+    } catch {
+      /* graph did not exist */
+    }
+  }
+}
