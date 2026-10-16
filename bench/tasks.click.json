@@ -1,0 +1,91 @@
+{
+  "repo": "pallets/click",
+  "sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+  "test": "python -m pytest -q -x -p no:cacheprovider",
+  "tasks": [
+    {
+      "id": "clamp-max",
+      "file": "src/click/types.py",
+      "old": "return self._clamp(max, -1, self.max_open)",
+      "new": "return self._clamp(min, -1, self.max_open)",
+      "symptom": "With `click.IntRange(0, 10, clamp=True)`, passing 15 on the command line gives 0 instead of clamping to 10."
+    },
+    {
+      "id": "clamp-open",
+      "file": "src/click/types.py",
+      "old": "        return bound + dir\n\n\nclass FloatParamType",
+      "new": "        return bound - dir\n\n\nclass FloatParamType",
+      "symptom": "`click.IntRange(0, 10, max_open=True, clamp=True)` turns an input of 20 into 11; it should become 9 because 10 itself is excluded."
+    },
+    {
+      "id": "bool-on",
+      "file": "src/click/types.py",
+      "old": "        \"on\": True,",
+      "new": "        \"on\": False,",
+      "symptom": "A `type=bool` option given the value `on` is treated as False. `off` works as expected."
+    },
+    {
+      "id": "split-opt",
+      "file": "src/click/parser.py",
+      "old": "        return opt[:2], opt[2:]",
+      "new": "        return first, opt[2:]",
+      "symptom": "When a context sets `token_normalize_func` (e.g. `str.lower`), long options like `--Name` are rejected with 'No such option', while short options still work."
+    },
+    {
+      "id": "short-help",
+      "file": "src/click/utils.py",
+      "old": "    if len(text) <= max_length:",
+      "new": "    if len(text) < max_length:",
+      "symptom": "A command whose help text is exactly as long as the short-help limit gets truncated with '...' in the group's `--help` listing, even though it fits."
+    },
+    {
+      "id": "measure-table",
+      "file": "src/click/formatting.py",
+      "old": "            widths[idx] = max(widths.get(idx, 0), term_len(col))",
+      "new": "            widths[idx] = min(widths.get(idx, 0), term_len(col))",
+      "symptom": "In `--help` output the option descriptions are no longer aligned in a column; each description starts right after its option name."
+    },
+    {
+      "id": "choice-case",
+      "file": "src/click/types.py",
+      "old": "        if not self.case_sensitive:\n            normed_value = normed_value.casefold()",
+      "new": "        if self.case_sensitive:\n            normed_value = normed_value.casefold()",
+      "symptom": "`click.Choice([\"Apple\", \"Banana\"], case_sensitive=False)` rejects `apple`, while a case-sensitive Choice now accepts the wrong case."
+    },
+    {
+      "id": "envvar-auto",
+      "file": "src/click/core.py",
+      "old": "            envvar = f\"{ctx.auto_envvar_prefix}_{self.name.upper()}\"\n            rv = os.environ.get(envvar)",
+      "new": "            envvar = f\"{ctx.auto_envvar_prefix}_{self.name.lower()}\"\n            rv = os.environ.get(envvar)",
+      "symptom": "`auto_envvar_prefix` stopped working for values: with `cli(auto_envvar_prefix=\"MYAPP\")`, setting `MYAPP_NAME=foo` is ignored for the `--name` option (the help text still shows the right variable)."
+    },
+    {
+      "id": "envvar-nested",
+      "file": "src/click/core.py",
+      "old": "f\"{parent.auto_envvar_prefix}_{self.info_name.upper()}\"",
+      "new": "f\"{parent.auto_envvar_prefix}{self.info_name.upper()}\"",
+      "symptom": "For nested subcommands the automatic env var name is wrong: with prefix `MYAPP` and subcommand `sub`, option `--opt` reads `MYAPPSUB_OPT` instead of `MYAPP_SUB_OPT`."
+    },
+    {
+      "id": "eager-order",
+      "file": "src/click/core.py",
+      "old": "        return not item.is_eager, idx",
+      "new": "        return item.is_eager, idx",
+      "symptom": "Eager options are no longer processed first: `--version` and `--help` callbacks run after other options' callbacks, so a failing required/validated option errors out before `--version` can print."
+    },
+    {
+      "id": "style-bold",
+      "file": "src/click/termui.py",
+      "old": "        bits.append(f\"\\033[{1 if bold else 22}m\")",
+      "new": "        bits.append(f\"\\033[{2 if bold else 22}m\")",
+      "symptom": "`click.style(\"hi\", bold=True)` produces dim text: it emits the ANSI code for dim instead of bold."
+    },
+    {
+      "id": "join-options",
+      "file": "src/click/formatting.py",
+      "old": "    rv.sort(key=lambda x: x[0])",
+      "new": "    rv.sort(key=lambda x: -x[0])",
+      "symptom": "In `--help`, options are listed long-form first (`--verbose, -v`) instead of the usual short-form first (`-v, --verbose`)."
+    }
+  ]
+}

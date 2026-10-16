@@ -34,6 +34,9 @@ export interface EngramOptions {
   onSession?: (id: string) => void;
   /** Reuse a parent's session (subagents). */
   parentSession?: string;
+  /** Repository root and graph slug (default: git root of cwd, slug from origin remote). */
+  root?: string;
+  repo?: string;
 }
 
 function gitRoot(cwd: string) {
@@ -63,8 +66,8 @@ export function createEngramExtension(opts: EngramOptions = {}) {
 
     async function ready() {
       if (g) return g;
-      root = gitRoot(process.cwd());
-      g = await RepoGraph.open(repoSlug(root));
+      root = opts.root ?? gitRoot(process.cwd());
+      g = await RepoGraph.open(opts.repo ?? repoSlug(root));
       const s = await indexRepo(g, root); // incremental: only changed files are re-parsed
       if (s.changed === s.files) await ingestGit(g, root); // first time we see this repo
       return g;
