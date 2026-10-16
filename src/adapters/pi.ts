@@ -71,22 +71,27 @@ export function createEngramExtension(opts: PiAdapterOptions = {}) {
 
     pi.on("tool_result", async (event) => {
       if (!es) return;
-      const input = event.input as { path?: string; command?: string };
+      const input = event.input as { path?: string; command?: string; newText?: string; content?: string; pattern?: string };
       const name = (event as { toolName?: string }).toolName;
+      const text = event.content.map((c) => ("text" in c ? c.text : "")).join("\n");
+      let hint: string | undefined;
       try {
         if (name === "read") {
           const f = rel(input.path);
-          if (f) await es.afterRead(f);
+          if (f) hint = await es.afterRead(f);
         } else if ((name === "edit" || name === "write") && !event.isError) {
           const f = rel(input.path);
-          if (f) await es.afterEdit(f);
+          if (f) hint = await es.afterEdit(f, input.newText ?? input.content);
         } else if (name === "bash" && input.command) {
-          await es.afterCommand(input.command, !event.isError);
+          hint = await es.afterCommand(input.command, !event.isError, text.slice(-20000));
+        } else if ((name === "grep" || name === "find") && input.pattern) {
+          hint = await es.afterSearch(input.pattern, text.slice(0, 20000));
         }
       } catch {
         /* memory is best-effort; never break the agent's tool call */
       }
-      return;
+      // Just-in-time hint goes right next to the tool result the model is about to read.
+      return hint ? { content: [...event.content, { type: "text" as const, text: `\n${hint}` }] } : undefined;
     });
 
     pi.on("agent_end", async (event) => {

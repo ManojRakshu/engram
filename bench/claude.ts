@@ -8,7 +8,7 @@
  * A run passes when the repo's full test suite passes afterwards.
  */
 import { spawn, execSync } from "node:child_process";
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { close, RepoGraph } from "../src/db.ts";
@@ -59,6 +59,7 @@ interface ClaudeRun {
   durationMs: number;
   result: string;
   error?: string;
+  timedOut?: boolean;
 }
 
 function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.ProcessEnv): Promise<ClaudeRun> {
@@ -75,16 +76,21 @@ function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.Proc
   if (config === "baseline") args.push("--strict-mcp-config");
   else args.push("--plugin-dir", pluginDir);
   return new Promise((resolve) => {
-    const p = spawn("claude", args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn("claude", args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], detached: true });
+    const started = Date.now();
+    // Hard wall-clock limit: a timed-out run counts as a failure (not silently dropped).
+    const timer = setTimeout(() => {
+      run.timedOut = true;
+      try {
+        process.kill(-p.pid!, "SIGKILL");
+      } catch {
+        /* already gone */
+      }
+    }, Number(flag("timeout-sec", "480")) * 1000);
     let buf = "";
     let stderr = "";
     const run: ClaudeRun = { ok: false, sessionId: "", turns: 0, toolCalls: 0, tools: {}, usage: { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 }, cost: 0, durationMs: 0, result: "" };
-    p.stdout.on("data", (d) => {
-      buf += d;
-      let i;
-      while ((i = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, i);
-        buf = buf.slice(i + 1);
+    const handle = (line: string) => {
         try {
           const e = JSON.parse(line);
           if (e.type === "assistant") {
@@ -112,11 +118,23 @@ function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.Proc
         } catch {
           /* non-JSON line */
         }
+    };
+    p.stdout.on("data", (d) => {
+      buf += d;
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        handle(buf.slice(0, i));
+        buf = buf.slice(i + 1);
       }
     });
     p.stderr.on("data", (d) => (stderr += d));
     p.on("close", (code) => {
-      if (!run.sessionId) run.error = `exit ${code}: ${stderr.slice(-300)}`;
+      clearTimeout(timer);
+      if (buf.trim()) handle(buf); // the final result line may arrive without a trailing newline
+      if (run.timedOut) {
+        run.error = "";
+        run.durationMs = Date.now() - started;
+      } else if (!run.sessionId) run.error = `exit ${code}: ${stderr.slice(-300)}`;
       resolve(run);
     });
   });
@@ -134,6 +152,7 @@ async function runOne(config: Config, t: Task, rep: number) {
     PYTHONPATH: path.join(dir, suite.pythonpath ?? "src"), // test the workspace's code, not the editable install
     ENGRAM_REPO: graphName(config),
     ENGRAM_AGENT: `cc-${config}-${t.id}-${rep}`,
+    ENGRAM_HOOK_LOG: path.resolve(`bench/results/hooks-${stamp}.jsonl`),
   };
   if (config === "cold") await wipeMemory(await RepoGraph.open(graphName(config)));
   const r = await runClaude(dir, PROMPT(t), config, env);
@@ -144,7 +163,7 @@ async function runOne(config: Config, t: Task, rep: number) {
   }
   dropWorkspace(dir);
   const totalIn = r.usage.input + r.usage.cacheRead + r.usage.cacheWrite;
-  const row = { harness: "claude-code", model, config, task: t.id, rep, pass: tests.pass, tokens: { ...r.usage, totalIn }, cost: r.cost, turns: r.turns, toolCalls: r.toolCalls, tools: r.tools, wallMs: r.durationMs, error: r.error ?? "", answer: r.result };
+  const row = { harness: "claude-code", model, config, task: t.id, rep, timedOut: !!r.timedOut, pass: tests.pass && !r.timedOut, tokens: { ...r.usage, totalIn }, cost: r.cost, turns: r.turns, toolCalls: r.toolCalls, tools: r.tools, wallMs: r.durationMs, error: r.error ?? "", answer: r.result };
   appendFileSync(out, JSON.stringify(row) + "\n");
   console.log(`${config.padEnd(8)} ${t.id.padEnd(15)} r${rep} ${tests.pass ? "PASS" : "fail"} in=${totalIn} (uncached ${r.usage.input + r.usage.cacheWrite}) out=${r.usage.output} calls=${r.toolCalls} ${(r.durationMs / 1000).toFixed(0)}s $${r.cost.toFixed(4)} ${r.error ?? ""}`);
   return row;
@@ -185,6 +204,18 @@ async function main() {
     );
   }
   rmSync(workRoot, { recursive: true, force: true });
+  // Claude Code creates an (empty) project folder per workspace path; remove only the empty ones we caused.
+  const slug = workRoot.replace(/[/.]/g, "-");
+  const projects = path.join(os.homedir(), ".claude", "projects");
+  for (const d of readdirSync(projects).filter((d) => d.startsWith(slug) || d.includes(path.basename(workRoot)))) {
+    for (const p of [path.join(projects, d, "memory"), path.join(projects, d)]) {
+      try {
+        rmdirSync(p); // only succeeds on empty directories
+      } catch {
+        /* not empty: leave it */
+      }
+    }
+  }
   await close();
 }
 

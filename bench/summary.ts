@@ -11,6 +11,7 @@ interface Row {
   toolCalls: number;
   wallMs: number;
   error?: string;
+  timedOut?: boolean;
   model?: string;
   harness?: string;
 }
@@ -25,12 +26,13 @@ const suites = process.argv.slice(2).map((arg) => {
   const [label, ...files] = arg.split("=")[1] ? [arg.split("=")[0], ...arg.split("=")[1].split(",")] : ["run", arg];
   const rows: Row[] = files.flatMap((f) => readFileSync(f, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)));
   const ok = rows.filter((r) => !r.error && r.tokens.totalIn > 0);
+  const timeouts = rows.filter((r) => r.timedOut);
   const configs = [...new Set(ok.map((r) => r.config))];
   const agg = configs.map((c) => {
     const r = ok.filter((x) => x.config === c);
     return {
       config: c,
-      runs: r.length,
+      runs: r.length + timeouts.filter((x) => x.config === c).length,
       pass: r.filter((x) => x.pass).length,
       meanIn: mean(r.map((x) => x.tokens.totalIn)),
       medianIn: median(r.map((x) => x.tokens.totalIn)),
@@ -50,7 +52,7 @@ const suites = process.argv.slice(2).map((arg) => {
       }),
     ),
   }));
-  return { label, harness: ok[0]?.harness, model: ok[0]?.model, excluded: rows.length - ok.length, agg, tasks };
+  return { label, harness: ok[0]?.harness, model: ok[0]?.model, excluded: rows.length - ok.length - timeouts.length, timeouts: timeouts.length, agg, tasks };
 });
 
 const retrieval = existsSync("bench/results/retrieval.json") ? JSON.parse(readFileSync("bench/results/retrieval.json", "utf8")) : null;

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { EngramSession, type SessionState } from "../core/session.js";
@@ -16,6 +16,8 @@ import { EngramSession, type SessionState } from "../core/session.js";
  *   SessionEnd          release claims
  */
 interface HookInput {
+  error?: string;
+  tool_response?: unknown;
   session_id: string;
   transcript_path?: string;
   cwd?: string;
@@ -55,7 +57,27 @@ async function readStdin() {
 const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
 
 export async function runClaudeCodeHook() {
+  const t0 = performance.now();
   const input = JSON.parse((await readStdin()) || "{}") as HookInput;
+  // Optional overhead log: hook latency and injected tokens per event (benchmarks report these).
+  const write = process.stdout.write.bind(process.stdout);
+  let injected = 0;
+  process.stdout.write = ((chunk: string) => {
+    try {
+      const o = JSON.parse(chunk);
+      injected += Math.ceil(String(o.hookSpecificOutput?.additionalContext ?? o.hookSpecificOutput?.permissionDecisionReason ?? "").length / 4);
+    } catch {
+      /* not JSON */
+    }
+    return write(chunk);
+  }) as typeof process.stdout.write;
+  process.on("exit", () => {
+    if (process.env.ENGRAM_HOOK_LOG)
+      appendFileSync(
+        process.env.ENGRAM_HOOK_LOG,
+        JSON.stringify({ agent: process.env.ENGRAM_AGENT, event: input.hook_event_name, tool: input.tool_name, ms: Math.round(performance.now() - t0), injected }) + "\n",
+      );
+  });
   const root = gitRoot(input.cwd ?? process.cwd());
   if (!root || !input.session_id) return; // not a git repo: stay out of the way
   const persisted = load(input.session_id);
@@ -94,13 +116,23 @@ export async function runClaudeCodeHook() {
       break;
     }
     case "PostToolUse": {
-      if (input.tool_name === "Read" && file) await es.afterRead(file);
-      else if (input.tool_name && EDIT_TOOLS.has(input.tool_name) && file) await es.afterEdit(file);
-      else if (input.tool_name === "Bash" && cmd) await es.afterCommand(cmd, true);
+      let hint: string | undefined;
+      const ti = input.tool_input ?? {};
+      if (input.tool_name === "Read" && file) hint = await es.afterRead(file);
+      else if (input.tool_name && EDIT_TOOLS.has(input.tool_name) && file) {
+        const newText = (ti.new_string ?? ti.content ?? (ti.edits as { new_string?: string }[] | undefined)?.[0]?.new_string) as string | undefined;
+        hint = await es.afterEdit(file, newText);
+      } else if (input.tool_name === "Bash" && cmd) hint = await es.afterCommand(cmd, true);
+      else if ((input.tool_name === "Grep" || input.tool_name === "Glob") && typeof ti.pattern === "string")
+        hint = await es.afterSearch(ti.pattern, JSON.stringify(input.tool_response ?? "").slice(0, 20000));
+      if (hint) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: hint } }));
       break;
     }
     case "PostToolUseFailure": {
-      if (input.tool_name === "Bash" && cmd) await es.afterCommand(cmd, false);
+      if (input.tool_name === "Bash" && cmd) {
+        const hint = await es.afterCommand(cmd, false, String(input.error ?? "").slice(0, 20000));
+        if (hint) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUseFailure", additionalContext: hint } }));
+      }
       break;
     }
     case "Stop": {

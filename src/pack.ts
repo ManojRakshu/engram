@@ -226,8 +226,15 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   const testFiles = ftFile.filter((f) => f.isTest).map((f) => f.path);
   const maxFile = Math.max(1e-9, ...srcFiles.map((r) => r.score));
   if (W("paths")) for (const f of srcFiles.slice(0, 3)) seedFiles.set(f.path, { s: (0.5 * W("paths") * f.score) / maxFile, reason: "file path matches task" });
-  const maxPast = Math.max(1e-9, ...past.map((r) => r.score));
-  for (const p of past)
+  // Episodic recall only for genuinely similar tasks (word overlap), never for any shared word.
+  const mine = new Set(kwStems);
+  const similar = past.filter((p) => {
+    const theirs = new Set(keywords(p.task).map(stem));
+    const inter = [...theirs].filter((w) => mine.has(w)).length;
+    return inter / Math.max(1, new Set([...mine, ...theirs]).size) >= 0.35;
+  });
+  const maxPast = Math.max(1e-9, ...similar.map((r) => r.score));
+  for (const p of similar)
     for (const f of p.files) {
       const s = (1.5 * W("episodic") * p.score) / maxPast;
       if (s > 0 && (seedFiles.get(f)?.s ?? 0) < s) seedFiles.set(f, { s, reason: `edited in past session for "${p.task.slice(0, 60)}"` });

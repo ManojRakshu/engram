@@ -101,14 +101,20 @@ export function isVerifyCommand(cmd: string) {
 }
 
 /** Normalise "cd x && pytest tests/test_a.py::test_b -q" to its reusable shape: "pytest tests/test_a.py -q". */
+/**
+ * Keep the *procedure*, not the instance: "cd x && python -m pytest tests/a.py::t -q -x 2>&1 | tail"
+ * becomes "python -m pytest -q -x". Which tests to run is task-specific and comes from the graph.
+ */
 export function procedureShape(cmd: string) {
   return cmd
     .replace(/^cd [^&;]+(&&|;)\s*/, "")
-    .replace(/::[\w\[\]-]+/g, "")
+    .split(/\s*(\||&&|;|2>&1)\s*/)[0]
     .replace(/\s+-k\s+("[^"]*"|'[^']*'|\S+)/g, "")
-    .replace(/\s+/g, " ")
+    .split(/\s+/)
+    .filter((w) => !/[/.](py|[jt]sx?|go|rs)\b|::|^tests?\/?$|\/$/.test(w))
+    .join(" ")
     .trim()
-    .slice(0, 200);
+    .slice(0, 120);
 }
 
 export async function recordCommand(g: RepoGraph, sessionId: string, cmd: string, ok: boolean) {

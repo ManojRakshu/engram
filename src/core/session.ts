@@ -15,6 +15,7 @@ import {
 import { buildPack, renderCompact, renderPack, type Pack } from "../pack.js";
 import { repoSlug } from "../repo.js";
 import { loadConfig, type EngramConfig } from "./config.js";
+import { hintAfterEdit, hintAfterRead, hintAfterSearch, hintAfterTestFailure, type FocusItem } from "./jit.js";
 
 /**
  * The harness-agnostic Engram lifecycle. Every integration (pi extension, Claude Code hooks,
@@ -38,6 +39,10 @@ export interface SessionState {
   startedAt?: number;
   edited?: boolean;
   lastVerifyOk?: boolean;
+  /** Top pack locations, for just-in-time hints. */
+  focus?: FocusItem[];
+  /** Hints already given this session (each fires once). */
+  hinted?: string[];
 }
 
 export interface Usage {
@@ -89,7 +94,12 @@ export class EngramSession {
     if (this.state.graphSession) await this.end({}); // a new prompt closes the previous run
     const pack = this.config.contextPack ? await buildPack(this.graph, this.root, task, { budget: this.config.budget, weights: this.config.retrievers }) : undefined;
     const id = this.config.memory ? await startSession(this.graph, { agent: this.agent, task: task.slice(0, 500) }, pack) : undefined;
-    this.state = { graphSession: id, startedAt: Date.now() };
+    this.state = {
+      graphSession: id,
+      startedAt: Date.now(),
+      focus: pack?.items.slice(0, 6).map((i) => ({ id: i.id, q: i.id.split("#")[1]?.replace(/@\d+$/, "") ?? i.name, path: i.path, s: i.startLine, e: i.endLine })),
+      hinted: [],
+    };
     if (!pack) return {};
 
     const compact = this.config.format === "compact";
@@ -97,7 +107,7 @@ export class EngramSession {
     if (this.config.memory) {
       const procs = await knownProcedures(this.graph, compact ? 2 : 3);
       if (procs.length)
-        parts.push(compact ? `Verify (worked before): ${procs.map((p) => `\`${p.cmd}\``).join(" or ")}` : `### How to verify in this repo (worked before)\n${procs.map((p) => `- \`${p.cmd}\` (${p.ok}× ok)`).join("\n")}`);
+        parts.push(compact ? `Verify: \`${procs[0].cmd}${pack.tests.length ? " " + pack.tests.slice(0, 2).map((t) => t.split("::")[0]).join(" ") : ""}\` (this repo's test runner, worked before)` : `### How to verify in this repo (worked before)\n${procs.map((p) => `- \`${p.cmd}\` (${p.ok}× ok)`).join("\n")}`);
       if (opts.parentSession && id) {
         const notes = await inbox(this.graph, id);
         if (notes.length) parts.push(`### Handoff notes\n${notes.map((n) => `- ${n.note}`).join("\n")}`);
@@ -116,19 +126,53 @@ export class EngramSession {
     };
   }
 
-  async afterRead(file: string) {
-    if (this.config.memory && this.state.graphSession) await recordFileEvent(this.graph, this.state.graphSession, file, "READ");
+  // Each after* call returns an optional just-in-time hint for the adapter to put next to the tool result.
+
+  private seen() {
+    return new Set(this.state.hinted ?? []);
   }
 
-  async afterEdit(file: string) {
+  private remember(seen: Set<string>) {
+    this.state.hinted = [...seen];
+  }
+
+  async afterRead(file: string): Promise<string | undefined> {
+    if (this.config.memory && this.state.graphSession) await recordFileEvent(this.graph, this.state.graphSession, file, "READ");
+    if (!this.config.jit) return;
+    const seen = this.seen();
+    const hint = hintAfterRead(file, this.state.focus ?? [], seen);
+    this.remember(seen);
+    return hint;
+  }
+
+  async afterEdit(file: string, newText?: string): Promise<string | undefined> {
     await indexRepo(this.graph, this.root, [file]); // the graph stays current mid-session
     this.state.edited = true;
     if (this.config.memory && this.state.graphSession) await recordFileEvent(this.graph, this.state.graphSession, file, "EDITED");
+    if (!this.config.jit) return;
+    const seen = this.seen();
+    const hint = await hintAfterEdit(this.graph, this.root, file, newText, seen);
+    this.remember(seen);
+    return hint;
   }
 
-  async afterCommand(cmd: string, ok: boolean) {
-    if (/\b(pytest|test|vitest|jest|cargo test|go test)\b/.test(cmd)) this.state.lastVerifyOk = ok;
+  async afterSearch(pattern: string, resultText: string): Promise<string | undefined> {
+    if (!this.config.jit || !pattern) return;
+    const seen = this.seen();
+    const hint = await hintAfterSearch(this.graph, pattern, resultText, this.state.focus ?? [], seen);
+    this.remember(seen);
+    return hint;
+  }
+
+  async afterCommand(cmd: string, ok: boolean, output = ""): Promise<string | undefined> {
+    const isTest = /\b(pytest|test|vitest|jest|cargo test|go test)\b/.test(cmd);
+    if (isTest) this.state.lastVerifyOk = ok;
     if (this.config.memory && this.state.graphSession) await recordCommand(this.graph, this.state.graphSession, cmd, ok);
+    if (!this.config.jit || ok || !isTest) return;
+    const seen = this.seen();
+    const hint = await hintAfterTestFailure(this.graph, output, seen);
+    this.remember(seen);
+    return hint;
   }
 
   /** Outcome: verified by a passing test run after an edit = success; failing test run = failure. */

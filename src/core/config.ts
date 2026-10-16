@@ -12,6 +12,8 @@ export interface EngramConfig {
   budget: number;
   /** "compact" = ~200-token location map (default); "full" = signatures, why-paths, bodies, history. */
   format: "compact" | "full";
+  /** Just-in-time hints next to tool results (tests after an edit, definitions after a search, ...). */
+  jit: boolean;
   /** Episodic / semantic / procedural memory (sessions, lessons, verify commands). */
   memory: boolean;
   /** Cross-agent edit claims. */
@@ -28,6 +30,7 @@ export const DEFAULT_CONFIG: EngramConfig = {
   contextPack: true,
   budget: 2000,
   format: "compact",
+  jit: true,
   memory: true,
   claims: true,
   history: true,
@@ -51,6 +54,7 @@ export function loadConfig(root: string): EngramConfig {
   if (e.ENGRAM_BUDGET) env.budget = Number(e.ENGRAM_BUDGET);
   if (e.ENGRAM_FORMAT === "full" || e.ENGRAM_FORMAT === "compact") env.format = e.ENGRAM_FORMAT;
   if (bool(e.ENGRAM_PACK) !== undefined) env.contextPack = bool(e.ENGRAM_PACK)!;
+  if (bool(e.ENGRAM_JIT) !== undefined) env.jit = bool(e.ENGRAM_JIT)!;
   if (bool(e.ENGRAM_MEMORY) !== undefined) env.memory = bool(e.ENGRAM_MEMORY)!;
   if (bool(e.ENGRAM_CLAIMS) !== undefined) env.claims = bool(e.ENGRAM_CLAIMS)!;
   if (bool(e.ENGRAM_HISTORY) !== undefined) env.history = bool(e.ENGRAM_HISTORY)!;
