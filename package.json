@@ -11,7 +11,7 @@
     "engram": "tsx src/cli.ts",
     "build": "tsc -p .",
     "typecheck": "tsc -p . --noEmit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --liftoff-only --import tsx --test test/*.test.ts"
   },
   "engines": {
     "node": ">=22.19"
