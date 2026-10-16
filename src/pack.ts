@@ -307,6 +307,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   }
 
   // 3. Hydrate, add a small PageRank prior, rank.
+  if (process.env.ENGRAM_TRACE) for (const [id, sc] of scores) if (id.includes(process.env.ENGRAM_TRACE)) console.error("TRACE", id, sc.toFixed(2), why.get(id));
   const ranked = [...scores].sort((a, b) => b[1] - a[1]).slice(0, 40);
   const meta = await g.read<Omit<PackItem, "score" | "why"> & { rank: number }>(
     "pack.hydrate",
