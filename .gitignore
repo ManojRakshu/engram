@@ -6,3 +6,7 @@ bench/results/raw/
 bench/work/
 *.log
 bench/results/streams/
+
+# the Claude Code plugin ships its prebuilt, self-contained bundle
+!plugin/dist/
+!plugin/dist/**
