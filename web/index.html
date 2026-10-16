@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Engram — context graph for coding agents</title>
+  <meta name="description" content="A FalkorDB graph that gives coding agents ranked, explainable context, shared memory across sessions, and coordination between agents." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='8' cy='16' r='5' fill='%237c5cff'/%3E%3Ccircle cx='24' cy='8' r='4' fill='%2334d399'/%3E%3Ccircle cx='24' cy='24' r='4' fill='%23f59e0b'/%3E%3Cpath d='M8 16L24 8M8 16L24 24' stroke='%23cbd5e1' stroke-width='2'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M8 16L24 8M8 16L24 24M24 8L24 24" stroke="currentColor" stroke-opacity=".35" stroke-width="2"/><circle cx="8" cy="16" r="5" fill="var(--accent)"/><circle cx="24" cy="8" r="4" fill="var(--green)"/><circle cx="24" cy="24" r="4" fill="var(--amber)"/></svg>
+      <div>
+        <h1>Engram</h1>
+        <p>The context graph for coding agents · built on FalkorDB</p>
+      </div>
+    </div>
+    <label class="repo">repo <select id="repo"></select></label>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button data-tab="ask" class="active">Ask the graph</button>
+    <button data-tab="impact">Blast radius</button>
+    <button data-tab="memory">Memory &amp; agents</button>
+    <button data-tab="people">Who knows what</button>
+    <button data-tab="bench">Benchmark</button>
+  </nav>
+
+  <main>
+    <section id="tab-ask" class="tab active">
+      <form id="ask-form" class="ask">
+        <textarea id="task" rows="2" placeholder="Describe a task or paste a bug report…">With click.IntRange(0, 10, clamp=True), passing 15 on the command line gives 0 instead of clamping to 10.</textarea>
+        <div class="ask-row">
+          <label>budget <input id="budget" type="number" value="2000" min="300" max="8000" step="100" /> tokens</label>
+          <button type="submit" class="primary">Build context pack</button>
+        </div>
+      </form>
+      <div id="ask-stats" class="stats"></div>
+      <div class="split">
+        <div class="panel"><h3>Why each item is in the pack</h3><div id="graph" class="graph"></div><div class="legend"><span class="dot seed"></span>named / matched <span class="dot exp"></span>reached via graph <span class="dot mem"></span>from memory</div></div>
+        <div class="panel"><h3>Ranked context <small>(what the agent receives)</small></h3><ol id="items" class="items"></ol></div>
+      </div>
+      <details class="panel raw"><summary>Raw pack as injected into the agent</summary><pre id="rendered"></pre></details>
+    </section>
+
+    <section id="tab-impact" class="tab">
+      <form id="impact-form" class="inline">
+        <input id="impact-target" placeholder="symbol name, e.g. get_default or Option.get_default" value="Option.get_default" />
+        <button class="primary">Find blast radius</button>
+      </form>
+      <div id="impact-pick" class="chips"></div>
+      <div class="split">
+        <div class="panel"><h3>Callers (transitive)</h3><div id="impact-graph" class="graph"></div></div>
+        <div class="panel"><h3>What this change touches</h3><div id="impact-detail"></div></div>
+      </div>
+    </section>
+
+    <section id="tab-memory" class="tab">
+      <div class="grid3">
+        <div class="panel"><h3>Live edit claims</h3><div id="claims"></div></div>
+        <div class="panel"><h3>Procedures learned</h3><div id="procs"></div></div>
+        <div class="panel"><h3>Lessons</h3><div id="lessons"></div></div>
+      </div>
+      <div class="panel"><h3>Agent sessions <small>(episodic memory — newest first)</small></h3><div id="sessions"></div></div>
+    </section>
+
+    <section id="tab-people" class="tab">
+      <div class="split">
+        <div class="panel"><h3>Most central code <small>(PageRank on the call graph)</small></h3><ol id="central" class="plain"></ol><h3>Top contributors</h3><div id="experts"></div><h3>Graph</h3><div id="counts" class="kv"></div></div>
+        <div class="panel"><h3>Why is this file the way it is?</h3><select id="why-file"></select><div id="why"></div></div>
+      </div>
+    </section>
+
+    <section id="tab-bench" class="tab">
+      <div class="panel"><h3>Same model, same tasks, same harness — with and without the graph</h3><p class="muted">Injected real bugs in <code>pallets/click</code>; the agent only sees a symptom report. A run passes when the full test suite passes. Baseline = plain <code>pi</code>. Cold = Engram with empty memory each task. Warm = memory carried across tasks.</p><div id="bench-summary"></div><div id="bench-chart"></div><div id="bench-table"></div></div>
+      <div class="panel"><h3>Graph query latency <small>(this server, live)</small></h3><div id="latency"></div></div>
+    </section>
+  </main>
+
+  <footer>Engram · <a href="https://github.com/" id="repo-link">source</a> · graph by <a href="https://www.falkordb.com">FalkorDB</a> · harness by <a href="https://pi.dev">pi</a></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
