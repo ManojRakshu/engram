@@ -1,0 +1,11 @@
+# Render blueprint: one free web service running FalkorDB + the Engram dashboard (graphs baked into the image).
+services:
+  - type: web
+    name: engram
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/repos
+    envVars:
+      - key: PORT
+        value: "8787"
