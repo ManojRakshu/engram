@@ -2,14 +2,10 @@ import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { RepoGraph } from "./db.js";
-import { ingestGit } from "./git.js";
-import { indexRepo } from "./indexer/index.js";
-import { findSymbols, renderFind } from "./lookup.js";
-import { addLesson, claimFile, endSession, impact, releaseClaims, renderImpact, startSession } from "./memory.js";
-import { buildPack, renderPack } from "./pack.js";
-import { repoSlug } from "./repo.js";
-import { renderWhy, why } from "./why.js";
+import { EngramSession } from "../core/session.js";
+import { findSymbols, renderFind } from "../lookup.js";
+import { addLesson, impact, renderImpact } from "../memory.js";
+import { renderWhy, why } from "../why.js";
 
 /**
  * MCP server: the same graph, for any MCP client (Claude Code, Cursor, omp, Codex...).
@@ -17,11 +13,9 @@ import { renderWhy, why } from "./why.js";
  */
 export async function serveMcp(rootArg?: string) {
   const root = path.resolve(rootArg ?? process.env.ENGRAM_ROOT ?? process.cwd());
-  const g = await RepoGraph.open(repoSlug(root));
-  const s = await indexRepo(g, root);
-  if (s.changed === s.files) await ingestGit(g, root);
-  const agent = process.env.ENGRAM_AGENT ?? `mcp-${process.pid}`;
-  let sessionId: string | undefined;
+  const es = await EngramSession.open({ root, agent: process.env.ENGRAM_AGENT ?? `mcp-${process.pid}` });
+  await es.sync();
+  const g = es.graph;
 
   const server = new McpServer({ name: "engram", version: "0.1.0" });
   const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
@@ -34,10 +28,9 @@ export async function serveMcp(rootArg?: string) {
       annotations: { readOnlyHint: false },
     },
     async ({ task, budget }) => {
-      await indexRepo(g, root);
-      const pack = await buildPack(g, root, task, { budget: budget ?? 2000 });
-      sessionId = await startSession(g, { agent, task }, pack);
-      return text(renderPack(pack));
+      if (budget) es.config.budget = budget;
+      const { context } = await es.onPrompt(task);
+      return text(context ?? "context packs are disabled for this repo");
     },
   );
   server.registerTool(
@@ -70,7 +63,7 @@ export async function serveMcp(rootArg?: string) {
       inputSchema: { lesson: z.string().max(400), about: z.string().optional() },
     },
     async ({ lesson, about }) => {
-      await addLesson(g, sessionId, lesson, about);
+      await addLesson(g, es.sessionId, lesson, about);
       return text("saved");
     },
   );
@@ -81,9 +74,9 @@ export async function serveMcp(rootArg?: string) {
       inputSchema: { path: z.string(), intent: z.string().optional() },
     },
     async ({ path: p, intent }) => {
-      sessionId ??= await startSession(g, { agent, task: intent ?? "edit" });
-      const r = await claimFile(g, sessionId, agent, p, intent);
-      return text(r.ok ? `claimed ${p}` : `BLOCKED: ${p} is held by ${r.holder!.agent} ("${r.holder!.intent}")`);
+      if (!es.sessionId) await es.onPrompt(intent ?? `edit ${p}`);
+      const r = await es.beforeEdit(p, intent);
+      return text(r.ok ? `claimed ${p}` : `BLOCKED: ${r.reason}`);
     },
   );
   server.registerTool(
@@ -93,11 +86,8 @@ export async function serveMcp(rootArg?: string) {
       inputSchema: { outcome: z.enum(["success", "failure", "unknown"]) },
     },
     async ({ outcome }) => {
-      if (sessionId) {
-        await endSession(g, sessionId, { outcome });
-        await releaseClaims(g, sessionId);
-      }
-      sessionId = undefined;
+      await es.release();
+      await es.end({}, outcome);
       return text("ok");
     },
   );

@@ -1,0 +1,11 @@
+{
+  "description": "Engram: context pack on prompt, edit claims, memory of reads/edits/commands, session close",
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 20 }] }],
+    "PreToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 10 }] }],
+    "PostToolUse": [{ "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Bash", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 15 }] }],
+    "PostToolUseFailure": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 10 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 15 }] }],
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/engram", "args": ["hook"], "timeout": 5 }] }]
+  }
+}

@@ -4,7 +4,8 @@ import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { RepoGraph } from "../db.js";
 import { ensureSchema } from "../schema.js";
-import { langOf, nameTerms, parseSource, terms, type ParsedFile } from "./parse.js";
+import { nameTerms, terms, type ParsedFile } from "./parse.js";
+import { languageFor } from "./languages.js";
 
 const MAX_FILE_BYTES = 400_000;
 
@@ -21,7 +22,7 @@ export function listSourceFiles(root: string): string[] {
   const out = execFileSync("git", ["ls-files", "-co", "--exclude-standard"], { cwd: root, maxBuffer: 64 << 20 }).toString();
   return out
     .split("\n")
-    .filter((f) => f && langOf(f) && !/(^|\/)(node_modules|dist|build|vendor|\.venv)\//.test(f))
+    .filter((f) => f && languageFor(f) && !/(^|\/)(node_modules|dist|build|vendor|\.venv)\//.test(f))
     .filter((f) => {
       try {
         return statSync(path.join(root, f)).size <= MAX_FILE_BYTES;
@@ -70,7 +71,7 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
     const src = readFileSync(path.join(root, f), "utf8");
     const hash = createHash("sha1").update(src).digest("hex");
     if (known.get(f) === hash) continue;
-    const parsed = await parseSource(f, src);
+    const parsed = await languageFor(f)?.parse(f, src);
     if (parsed) changed.push({ path: f, hash, parsed });
   }
   const removed = only ? candidates.filter((f) => !allSet.has(f) && known.has(f)) : [...known.keys()].filter((f) => !allSet.has(f));
@@ -138,7 +139,7 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
 
   // Imports (file -> file)
   const importRows = changed.flatMap((c) =>
-    c.parsed.imports.flatMap((spec) => resolveImport(c.path, spec, allSet).map((to) => ({ from: c.path, to }))),
+    c.parsed.imports.flatMap((spec) => (languageFor(c.path)?.resolveImport?.(c.path, spec, allSet) ?? []).map((to) => ({ from: c.path, to }))),
   );
   for (const b of chunks(importRows, 1000)) {
     await g.write(
@@ -188,35 +189,6 @@ function symbolRows(file: string, parsed: ParsedFile) {
       parentId: s.parent ? (idOf.get(s.parent) ?? `${file}#${s.parent}`) : "",
     };
   });
-}
-
-const TS_EXT = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"];
-
-export function resolveImport(from: string, spec: string, files: Set<string>): string[] {
-  const dir = path.posix.dirname(from);
-  if (from.endsWith(".py")) {
-    // relative: ".mod" / "..pkg.mod" ; absolute: "pkg.mod"
-    const m = /^(\.*)(.*)$/.exec(spec)!;
-    const dots = m[1].length;
-    const rel = m[2].replace(/\./g, "/");
-    const bases = dots
-      ? [path.posix.join(dir, ...Array(Math.max(0, dots - 1)).fill(".."), rel)]
-      : [rel, `src/${rel}`, `lib/${rel}`];
-    for (const b of bases) {
-      for (const c of [`${b}.py`, `${b}/__init__.py`]) {
-        const n = path.posix.normalize(c);
-        if (files.has(n)) return [n];
-      }
-    }
-    return [];
-  }
-  if (!spec.startsWith(".")) return [];
-  const base = path.posix.normalize(path.posix.join(dir, spec));
-  const stem = base.replace(/\.(js|jsx|mjs|cjs)$/, "");
-  for (const c of [base, ...TS_EXT.map((e) => stem + e), ...TS_EXT.map((e) => `${base}/index${e}`)]) {
-    if (files.has(c)) return [c];
-  }
-  return [];
 }
 
 /**

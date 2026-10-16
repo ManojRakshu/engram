@@ -8,7 +8,10 @@ import { repoSlug } from "./repo.js";
 import { findSymbols, renderFind } from "./lookup.js";
 import { impact, renderImpact } from "./memory.js";
 import { renderWhy, why } from "./why.js";
-import { serveMcp } from "./mcp.js";
+import { serveMcp } from "./adapters/mcp.js";
+import { runClaudeCodeHook } from "./adapters/claude-code.js";
+import { languages } from "./indexer/languages.js";
+import { RETRIEVERS } from "./pack.js";
 
 const [cmd, ...rest] = process.argv.slice(2);
 const flags = new Map<string, string>();
@@ -22,6 +25,7 @@ const repo = flags.get("repo") ?? repoSlug(root);
 
 async function main() {
   if (cmd === "mcp") return serveMcp(flags.get("root"));
+  if (cmd === "hook") return runClaudeCodeHook();
   const g = await RepoGraph.open(repo);
   switch (cmd) {
     case "index": {
@@ -47,6 +51,16 @@ async function main() {
     case "why":
       console.log(renderWhy(await why(g, args[0])));
       break;
+    case "forget":
+      await g.drop();
+      console.log(`dropped graph engram:${repo} — Engram keeps nothing else about this repo`);
+      break;
+    case "plugins":
+      console.log("languages:", languages().map((l) => `${l.id} (${l.extensions.join(" ")})`).join(", "));
+      console.log("retrievers:");
+      for (const [id, d] of Object.entries(RETRIEVERS)) console.log(`  ${id.padEnd(12)} ${d}`);
+      console.log("adapters: pi extension, Claude Code hooks/plugin, MCP server (any MCP client), CLI, HTTP");
+      break;
     case "stats":
       console.log(latencyStats());
       break;
@@ -57,7 +71,10 @@ async function main() {
   find <name>                                  definition + callers/callees
   impact <path|path#Qual.name> [--depth N]     blast radius of a change
   why <path>                                   history, experts, lessons, sessions
-  mcp                                          run the MCP server (stdio)`);
+  mcp                                          run the MCP server (stdio)
+  hook                                         Claude Code hook handler (reads hook JSON on stdin)
+  plugins                                      list language adapters, retrievers, harness adapters
+  forget                                       drop this repo's graph (full removal)`);
   }
   if (flags.has("latency")) console.error(latencyStats());
 }
@@ -68,3 +85,5 @@ main()
     process.exitCode = 1;
   })
   .finally(() => cmd !== "mcp" && close());
+// hooks must exit promptly even if a socket lingers
+if (cmd === "hook") process.on("beforeExit", () => close());

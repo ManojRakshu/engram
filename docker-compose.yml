@@ -1,0 +1,8 @@
+# Local development: FalkorDB with the Browser UI (http://localhost:3010)
+services:
+  falkordb:
+    image: falkordb/falkordb:v4.22.1
+    ports: ["6390:6379", "3010:3000"]
+    volumes: ["falkordb-data:/var/lib/falkordb/data"]
+volumes:
+  falkordb-data:

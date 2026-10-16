@@ -1,0 +1,5 @@
+#!/bin/sh
+# Engram launcher for the Claude Code plugin: self-contained bundle + wasm grammars.
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+export ENGRAM_WASM_DIR="$DIR/dist"
+exec node "$DIR/dist/engram.mjs" "$@"

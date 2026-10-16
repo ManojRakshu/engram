@@ -33,7 +33,7 @@ let connecting: Promise<FalkorDB> | undefined;
 export async function connect(): Promise<FalkorDB> {
   if (client) return client;
   connecting ??= FalkorDB.connect({
-    url: process.env.FALKORDB_URL ?? "falkor://localhost:6390",
+    url: process.env.FALKORDB_URL ?? "falkor://localhost:6379",
   }).then((c) => (client = c));
   return connecting;
 }

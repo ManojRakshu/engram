@@ -1,0 +1,11 @@
+{
+  "name": "engram",
+  "owner": { "name": "Manoj Shetty" },
+  "plugins": [
+    {
+      "name": "engram",
+      "source": "./plugin",
+      "description": "Shared FalkorDB context graph for coding agents (context packs, memory, edit claims, blast radius)."
+    }
+  ]
+}

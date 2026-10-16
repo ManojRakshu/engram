@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { RepoGraph } from "./db.js";
 import { stem, terms } from "./indexer/parse.js";
+import type { RetrieverId } from "./core/config.js";
 
 export interface PackItem {
   id: string;
@@ -33,7 +34,24 @@ export interface PackOptions {
   budget?: number; // approx tokens for the rendered pack
   maxBodies?: number; // how many top symbols get their full source inlined
   maxItems?: number;
+  /** Retriever weights (multipliers on the defaults); 0 switches a retriever off. */
+  weights?: Partial<Record<RetrieverId, number>>;
 }
+
+/**
+ * The retriever taxonomy. Each one is an independent signal with its own Cypher query; the pack
+ * is their weighted sum. Weights are multipliers configurable per repo (engram.config.json).
+ */
+export const RETRIEVERS: Record<RetrieverId, string> = {
+  identifiers: "exact symbol names written in the task (`parse_args`, Option.get_default)",
+  names: "task words in symbol names, idf-weighted and de-duplicated by hit pattern",
+  docs: "full-text match on docstrings",
+  paths: "full-text match on file paths",
+  episodic: "files edited by past successful sessions on similar tasks",
+  lessons: "lessons attached to code by earlier sessions",
+  graph: "one-hop expansion over CALLS / HAS_MEMBER from the strongest seeds",
+  centrality: "PageRank prior from the call graph",
+};
 
 const STOP = new Set(
   "pass passed passing user users a an the and or of to in on for with by is are be it this that from as at into when where which while how what why should does do not no fix bug issue error make makes add use using fails failing failure wrong incorrect correctly returns return value values instead expected actually get set when then than it's its can cannot doesn't don't".split(
@@ -42,6 +60,24 @@ const STOP = new Set(
 );
 
 const tok = (s: string) => Math.ceil(s.length / 4);
+
+/** How code abbreviates words people write in bug reports. Both directions are matched. */
+const ABBREV: Record<string, string[]> = {
+  boolean: ["bool"], integer: ["int"], string: ["str"], number: ["num"], context: ["ctx"], configuration: ["config", "cfg"],
+  config: ["cfg", "conf"], environment: ["env"], variable: ["var"], directory: ["dir"], argument: ["arg"], parameter: ["param"],
+  message: ["msg"], error: ["err"], function: ["func", "fn"], value: ["val"], attribute: ["attr"], command: ["cmd"],
+  initialize: ["init"], maximum: ["max"], minimum: ["min"], temporary: ["tmp"], reference: ["ref"], request: ["req"],
+  response: ["resp", "res"], database: ["db"], document: ["doc"], application: ["app"], specification: ["spec"],
+  information: ["info"], description: ["desc"], previous: ["prev"], current: ["cur"], length: ["len"], index: ["idx"],
+  character: ["char"], position: ["pos"], source: ["src"], destination: ["dst", "dest"], default: ["def"], callback: ["cb"],
+  completion: ["complete"], normalize: ["norm"], format: ["fmt"], repository: ["repo"], package: ["pkg"], authentication: ["auth"],
+};
+
+export function expandAbbrev(words: string[]) {
+  const out = new Set(words);
+  for (const w of words) for (const a of ABBREV[w] ?? []) out.add(a);
+  return [...out];
+}
 
 export function keywords(task: string) {
   const words = terms(task)
@@ -67,6 +103,7 @@ const stems = (s: string) => new Set(terms(s).split(" ").filter(Boolean).map(ste
 export async function buildPack(g: RepoGraph, root: string, task: string, opts: PackOptions = {}): Promise<Pack> {
   const t0 = performance.now();
   const budget = opts.budget ?? 2500;
+  const W = (r: RetrieverId) => opts.weights?.[r] ?? 1;
   const kw = keywords(task);
   const ids = identifiers(task);
   const q = ftQuery(kw);
@@ -81,7 +118,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   };
 
   // 1. Seeds — exact identifiers, full-text over symbol terms, file paths, past sessions, lessons.
-  const kwStems = [...new Set(kw.map(stem))].filter((w) => w.length > 2);
+  const kwStems = [...new Set(expandAbbrev(kw).map(stem))].filter((w) => w.length > 2);
   const [exact, ftSym, ftFile, past, lessons, nameHits] = await Promise.all([
     ids.length
       ? g.read<{ id: string; name: string }>("pack.exact", "MATCH (s:Symbol) WHERE s.name IN $ids RETURN s.id AS id, s.name AS name LIMIT 40", { ids })
@@ -136,7 +173,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
       : [],
   ]);
 
-  for (const e of exact) bump(e.id, 3, `named in task: \`${e.name}\``);
+  for (const e of exact) if (W("identifiers")) bump(e.id, 3 * W("identifiers"), `named in task: \`${e.name}\``);
   // Lexical seeds: task words in the symbol *name*, each weighted by rarity (idf), so
   // "Option.get_default" (option + default) beats the twenty generic "convert" methods.
   const N = Math.max(1, (await g.read<{ n: number }>("pack.count", "MATCH (s:Symbol) RETURN count(s) AS n"))[0]?.n ?? 1);
@@ -156,24 +193,24 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     .slice(0, 12);
   if (process.env.ENGRAM_DEBUG) console.error(named.map((n) => `${n.s.toFixed(2)} ${n.qualname} [${n.hits}]`).join("\n"));
   const maxNamed = Math.max(1e-9, ...named.map((r) => r.s));
-  for (const r of named) bump(r.id, (2.2 * r.s) / maxNamed, `name matches task (${r.hits.join(", ")})`);
+  for (const r of named) if (W("names")) bump(r.id, (2.2 * W("names") * r.s) / maxNamed, `name matches task (${r.hits.join(", ")})`);
 
   // Docstring full-text is a weaker signal; it only nudges.
   const maxSym = Math.max(1e-9, ...ftSym.map((r) => r.score));
-  for (const r of ftSym.slice(0, 15)) bump(r.id, (0.5 * r.score) / maxSym, "docs match task");
+  for (const r of ftSym.slice(0, 15)) if (W("docs")) bump(r.id, (0.5 * W("docs") * r.score) / maxSym, "docs match task");
 
   const seedFiles = new Map<string, { s: number; reason: string }>();
   const srcFiles = ftFile.filter((f) => !f.isTest && !f.isAux);
   const testFiles = ftFile.filter((f) => f.isTest).map((f) => f.path);
   const maxFile = Math.max(1e-9, ...srcFiles.map((r) => r.score));
-  for (const f of srcFiles.slice(0, 3)) seedFiles.set(f.path, { s: (0.5 * f.score) / maxFile, reason: "file path matches task" });
+  if (W("paths")) for (const f of srcFiles.slice(0, 3)) seedFiles.set(f.path, { s: (0.5 * W("paths") * f.score) / maxFile, reason: "file path matches task" });
   const maxPast = Math.max(1e-9, ...past.map((r) => r.score));
   for (const p of past)
     for (const f of p.files) {
-      const s = (1.5 * p.score) / maxPast;
-      if ((seedFiles.get(f)?.s ?? 0) < s) seedFiles.set(f, { s, reason: `edited in past session for "${p.task.slice(0, 60)}"` });
+      const s = (1.5 * W("episodic") * p.score) / maxPast;
+      if (s > 0 && (seedFiles.get(f)?.s ?? 0) < s) seedFiles.set(f, { s, reason: `edited in past session for "${p.task.slice(0, 60)}"` });
     }
-  for (const l of lessons) if (l.target) bump(l.target, 1.5, `lesson: ${l.text.slice(0, 60)}`);
+  for (const l of lessons) if (l.target && W("lessons")) bump(l.target, 1.5 * W("lessons"), `lesson: ${l.text.slice(0, 60)}`);
 
   // File seeds spread to that file's most central symbols.
   if (seedFiles.size) {
@@ -211,7 +248,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     const seedScore = new Map(seeds);
     for (const r of nb) {
       if (r.id === r.seed) continue;
-      bump(r.id, (seedScore.get(r.seed) ?? 0) * r.w, `${r.rel} \`${r.seedName}\``);
+      if (W("graph")) bump(r.id, (seedScore.get(r.seed) ?? 0) * r.w * W("graph"), `${r.rel} \`${r.seedName}\``);
     }
   }
 
@@ -226,7 +263,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   );
   const maxRank = Math.max(1e-9, ...meta.map((m) => m.rank));
   let items: PackItem[] = meta
-    .map(({ rank, ...m }) => ({ ...m, score: (scores.get(m.id) ?? 0) + (0.3 * rank) / maxRank, why: why.get(m.id) ?? [] }))
+    .map(({ rank, ...m }) => ({ ...m, score: (scores.get(m.id) ?? 0) + (0.3 * W("centrality") * rank) / maxRank, why: why.get(m.id) ?? [] }))
     .sort((a, b) => b.score - a.score);
   const cutoff = (items[0]?.score ?? 0) * 0.2;
   items = items.filter((i) => i.score >= cutoff).slice(0, opts.maxItems ?? 18);

@@ -20,7 +20,7 @@ import {
 import { close, latencyStats, RepoGraph } from "../src/db.ts";
 import { ingestGit } from "../src/git.ts";
 import { indexRepo } from "../src/indexer/index.ts";
-import { createEngramExtension } from "../src/pi-extension.ts";
+import { createEngramExtension } from "../src/adapters/pi.ts";
 import { applyTask, loadSuite, resetRepo, runTests, type Task } from "./tasks.ts";
 
 type Config = "baseline" | "cold" | "warm";

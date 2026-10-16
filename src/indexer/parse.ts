@@ -19,27 +19,10 @@ export interface ParsedSymbol {
 }
 
 export interface ParsedFile {
-  lang: Lang;
+  lang: string;
   symbols: ParsedSymbol[];
   imports: string[]; // raw module specifiers
   loc: number;
-}
-
-const EXT: Record<string, Lang> = {
-  ".ts": "typescript",
-  ".mts": "typescript",
-  ".cts": "typescript",
-  ".tsx": "tsx",
-  ".js": "javascript",
-  ".mjs": "javascript",
-  ".cjs": "javascript",
-  ".jsx": "javascript",
-  ".py": "python",
-};
-
-export function langOf(file: string): Lang | undefined {
-  if (file.endsWith(".d.ts")) return undefined;
-  return EXT[path.extname(file)];
 }
 
 const require = createRequire(import.meta.url);
@@ -47,10 +30,13 @@ const languages = new Map<Lang, Parser.Language>();
 let ready: Promise<void> | undefined;
 
 async function init() {
-  await Parser.init();
-  const dir = path.dirname(require.resolve("tree-sitter-wasms/package.json"));
+  // Bundled builds (the Claude Code plugin) ship the wasm files next to the bundle: ENGRAM_WASM_DIR.
+  const bundled = process.env.ENGRAM_WASM_DIR;
+  const runtime = bundled ? path.join(bundled, "tree-sitter.wasm") : undefined;
+  await Parser.init(runtime ? { locateFile: () => runtime } : undefined);
+  const dir = bundled ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
   for (const l of ["typescript", "tsx", "javascript", "python"] as Lang[]) {
-    languages.set(l, await Parser.Language.load(path.join(dir, "out", `tree-sitter-${l}.wasm`)));
+    languages.set(l, await Parser.Language.load(path.join(dir, `tree-sitter-${l}.wasm`)));
   }
 }
 
@@ -115,9 +101,8 @@ function calleeName(call: SyntaxNode, lang: Lang): string | undefined {
   return;
 }
 
-export async function parseSource(file: string, source: string): Promise<ParsedFile | undefined> {
-  const lang = langOf(file);
-  if (!lang) return;
+/** Built-in tree-sitter parser used by the TS/JS/Python language adapters (see languages.ts). */
+export async function parseTreeSitter(lang: Lang, source: string): Promise<ParsedFile | undefined> {
   const parser = await parserFor(lang);
   const tree = parser.parse(source);
   const symbols: ParsedSymbol[] = [];

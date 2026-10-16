@@ -1,0 +1,8 @@
+{
+  "name": "engram",
+  "version": "0.1.0",
+  "description": "Shared context graph for coding agents on FalkorDB: ranked context packs before every prompt, cross-agent edit claims, episodic/procedural memory, blast-radius and history tools.",
+  "author": { "name": "Manoj Shetty" },
+  "license": "MIT",
+  "keywords": ["falkordb", "graph", "memory", "context", "multi-agent"]
+}
