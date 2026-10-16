@@ -16,9 +16,14 @@ import { RETRIEVERS } from "./pack.js";
 const [cmd, ...rest] = process.argv.slice(2);
 const flags = new Map<string, string>();
 const args: string[] = [];
+// On/off switches never take a value, so `pack --compact "task"` keeps the task as an argument.
+const SWITCHES = new Set(["compact", "fresh", "no-git", "latency"]);
 for (let i = 0; i < rest.length; i++) {
-  if (rest[i].startsWith("--")) flags.set(rest[i].slice(2), rest[i + 1]?.startsWith("--") ? "true" : (rest[++i] ?? "true"));
-  else args.push(rest[i]);
+  if (rest[i] === "--") break; // `engram run "task" -- <agent command>`: the rest belongs to the agent
+  if (rest[i].startsWith("--")) {
+    const k = rest[i].slice(2);
+    flags.set(k, SWITCHES.has(k) || rest[i + 1] === undefined || rest[i + 1].startsWith("--") ? "true" : rest[++i]);
+  } else args.push(rest[i]);
 }
 const root = path.resolve(flags.get("root") ?? process.cwd());
 const repo = flags.get("repo") ?? repoSlug(root);

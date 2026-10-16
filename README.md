@@ -105,26 +105,55 @@ session.
 
 ## Install in 60 seconds
 
+You need **Docker** (for FalkorDB) and **Node 22+**. No API keys: Engram makes no LLM calls.
+
+**1. Start FalkorDB** (once; the data persists in a Docker volume):
 ```bash
-# 1. FalkorDB
-docker run -d -p 6379:6379 -p 3000:3000 falkordb/falkordb:v4.22.1
-
-# 2a. Claude Code: plugin (hooks + MCP server)
-/plugin marketplace add <you>/engram
-/plugin install engram@engram
-
-# 2b. Any MCP client (Cursor, Codex, omp, OpenCode, ...)
-npx engram-graph mcp          # stdio MCP server, run inside your repo
-
-# 2c. pi
-pi --extension ./pi/engram.ts
-
-# 2d. Any CLI agent with a prompt argument
-engram run "fix the flaky retry in the uploader" -- codex exec {prompt}
+docker run -d --name falkordb -p 6379:6379 -p 3000:3000 -v falkordb:/var/lib/falkordb/data falkordb/falkordb:v4.22.1
 ```
 
-On first use the repo is indexed (click: ~1 s; networkx, 128k LOC: ~5 s). After that, only changed files are
-re-parsed. To remove it completely, run `engram forget` (drops the repo's graph) and uninstall the plugin.
+**2. Add Engram to your agent.** Pick one:
+
+**Claude Code** (plugin: hooks + MCP tools). Inside Claude Code:
+```
+/plugin marketplace add <owner>/engram
+/plugin install engram@engram
+```
+Restart Claude Code and work as usual. Your first prompt in a repo indexes it (click: ~1 s, 128k-line networkx: ~5 s).
+`/mcp` lists the `engram` tools.
+
+**Any MCP client** (Cursor, Codex, omp, OpenCode, …):
+```bash
+git clone https://github.com/<owner>/engram ~/engram    # self-contained, no npm install needed
+```
+```json
+{ "mcpServers": { "engram": { "command": "~/engram/plugin/bin/engram", "args": ["mcp"] } } }
+```
+
+**Any CLI agent** that takes a prompt argument:
+```bash
+~/engram/plugin/bin/engram run "fix the flaky retry in the uploader" -- codex exec {prompt}
+```
+
+**pi:**
+```bash
+cd ~/engram && npm install && pi --extension ~/engram/pi/engram.ts
+```
+
+**3. Optional checks:**
+```bash
+cd your-repo
+~/engram/plugin/bin/engram pack --compact "describe a bug"   # the map an agent would get
+~/engram/plugin/bin/engram impact src/some/file.py           # blast radius
+```
+
+**Configuration.** If FalkorDB isn't on `localhost:6379`, set `FALKORDB_URL` (for example
+`falkor://default:<password>@host:port` for FalkorDB Cloud). Each feature can be switched off in
+`engram.config.json` or with `ENGRAM_PACK`, `ENGRAM_JIT`, `ENGRAM_MEMORY`, `ENGRAM_CLAIMS` or `ENGRAM_HISTORY`
+set to `0`.
+
+**Uninstall:** run `/plugin uninstall engram` (or remove the MCP entry), then `engram forget` inside a repo to
+drop its graph. Nothing else is written.
 
 ## How it works
 
