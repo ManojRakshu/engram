@@ -5,6 +5,8 @@ import { createRequire } from "node:module";
 import path from "node:path";
 const require = createRequire(import.meta.url);
 const out = "plugin/dist";
+import { rmSync } from "node:fs";
+rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 await build({
   entryPoints: ["src/cli.ts"],
@@ -12,8 +14,12 @@ await build({
   platform: "node",
   format: "esm",
   target: "node22",
-  outfile: `${out}/engram.mjs`,
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  outdir: out,
+  splitting: true,
+  entryNames: "engram",
+  chunkNames: "chunks/[name]-[hash]",
+  outExtension: { ".js": ".mjs" },
+  banner: { js: "import { createRequire as __cr } from 'node:module'; import { fileURLToPath as __fu } from 'node:url'; import { dirname as __dn } from 'node:path'; const require = __cr(import.meta.url); const __filename = __fu(import.meta.url); const __dirname = __dn(__filename);" },
   external: ["@earendil-works/*"],
   minify: true,
   legalComments: "none",

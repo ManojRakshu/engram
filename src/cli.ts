@@ -3,13 +3,11 @@ import path from "node:path";
 import { close, latencyStats, RepoGraph } from "./db.js";
 import { indexRepo } from "./indexer/index.js";
 import { ingestGit } from "./git.js";
-import { buildPack, renderPack } from "./pack.js";
+import { buildPack, renderCompact, renderPack } from "./pack.js";
 import { repoSlug } from "./repo.js";
 import { findSymbols, renderFind } from "./lookup.js";
 import { impact, renderImpact } from "./memory.js";
 import { renderWhy, why } from "./why.js";
-import { serveMcp } from "./adapters/mcp.js";
-import { runClaudeCodeHook } from "./adapters/claude-code.js";
 import { languages } from "./indexer/languages.js";
 import { RETRIEVERS } from "./pack.js";
 
@@ -24,8 +22,9 @@ const root = path.resolve(flags.get("root") ?? process.cwd());
 const repo = flags.get("repo") ?? repoSlug(root);
 
 async function main() {
-  if (cmd === "mcp") return serveMcp(flags.get("root"));
-  if (cmd === "hook") return runClaudeCodeHook();
+  // Adapters load lazily so a hook process only pays for what it uses.
+  if (cmd === "mcp") return (await import("./adapters/mcp.js")).serveMcp(flags.get("root"));
+  if (cmd === "hook") return (await import("./adapters/claude-code.js")).runClaudeCodeHook();
   const g = await RepoGraph.open(repo);
   switch (cmd) {
     case "index": {
@@ -38,8 +37,10 @@ async function main() {
     case "pack": {
       const task = args.join(" ");
       const pack = await buildPack(g, root, task, { budget: Number(flags.get("budget") ?? 2500) });
-      console.log(renderPack(pack));
-      console.error(`\n[pack] ${pack.tokens} tokens, ${pack.items.length} items, ${pack.ms} ms`);
+      const text = flags.has("compact") ? renderCompact(pack) : renderPack(pack);
+      console.log(text);
+      console.error(`\n[pack] ~${Math.ceil(text.length / 4)} tokens shown (full ${pack.tokens}), confidence ${pack.confidence.level}`);
+      console.error(`[pack] ${pack.tokens} tokens, ${pack.items.length} items, ${pack.ms} ms`);
       break;
     }
     case "find":

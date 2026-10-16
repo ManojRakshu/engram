@@ -4,7 +4,7 @@ import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { RepoGraph } from "../db.js";
 import { ensureSchema } from "../schema.js";
-import { nameTerms, terms, type ParsedFile } from "./parse.js";
+import { nameTerms, stem, terms, type ParsedFile } from "./parse.js";
 import { languageFor } from "./languages.js";
 
 const MAX_FILE_BYTES = 400_000;
@@ -122,7 +122,7 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
         `UNWIND $syms AS s
          MATCH (f:File {path: s.path})
          CREATE (f)-[:DEFINES]->(n:Symbol {id: s.id, name: s.name, qualname: s.qualname, kind: s.kind, path: s.path,
-           startLine: s.startLine, endLine: s.endLine, signature: s.signature, doc: s.doc, terms: s.terms, nameTerms: s.nameTerms,
+           startLine: s.startLine, endLine: s.endLine, signature: s.signature, doc: s.doc, terms: s.terms, nameTerms: s.nameTerms, bodyTerms: s.bodyTerms,
            callNames: s.callNames, isTest: s.isTest, isAux: s.isAux, parentId: s.parentId})`,
         { syms: sb },
       );
@@ -163,6 +163,13 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
   };
 }
 
+/** Stemmed, de-duplicated words of the identifiers/literals in a body: the BM25 field for code search. */
+function bodyTerms(tokens: Set<string>) {
+  const words = new Set<string>();
+  for (const t of tokens) for (const w of terms(t).split(" ")) if (w.length > 1) words.add(stem(w));
+  return ` ${[...words].join(" ")} `; // space-padded for whole-word CONTAINS matching
+}
+
 function symbolRows(file: string, parsed: ParsedFile) {
   const seen = new Map<string, number>();
   const idOf = new Map<string, string>();
@@ -183,6 +190,7 @@ function symbolRows(file: string, parsed: ParsedFile) {
       doc: s.doc,
       terms: terms(s.qualname, s.doc, path.basename(file).replace(/\.[^.]+$/, "")),
       nameTerms: nameTerms(s.qualname),
+      bodyTerms: bodyTerms(s.bodyTokens),
       callNames: s.callNames,
       isTest: isTestPath(file),
       isAux: isAuxPath(file),

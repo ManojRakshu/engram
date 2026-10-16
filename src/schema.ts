@@ -28,7 +28,7 @@ const RANGE: [string, string][] = [
 ];
 
 const FULLTEXT: [string, string[]][] = [
-  ["Symbol", ["terms"]],
+  ["Symbol", ["terms", "bodyTerms"]],
   ["File", ["terms"]],
   ["Commit", ["msg"]],
   ["Lesson", ["text"]],

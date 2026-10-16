@@ -29,3 +29,18 @@ export function runTests(root: string, suite: Suite, env: NodeJS.ProcessEnv) {
 export function resetRepo(root: string, suite: Suite) {
   execSync(`git checkout -q --force ${suite.sha} && git clean -fdq -e .engram`, { cwd: root });
 }
+
+/**
+ * A leak-free task workspace: export the pinned tree (no history), inject the bug, and commit it
+ * as a single snapshot. `git diff` / `git log -p` / `git show` reveal nothing about the bug.
+ */
+export function snapshotWorkspace(source: string, suite: Suite, t: Task, dir: string) {
+  execSync(`mkdir -p ${dir} && git archive ${suite.sha} | tar -x -C ${dir}`, { cwd: source, shell: "/bin/sh" });
+  const f = path.join(dir, t.file);
+  const src = readFileSync(f, "utf8");
+  if (src.split(t.old).length !== 2) throw new Error(`${t.id}: mutation does not match exactly once`);
+  writeFileSync(f, src.replace(t.old, t.new));
+  const id = { GIT_AUTHOR_NAME: "bench", GIT_AUTHOR_EMAIL: "bench@local", GIT_COMMITTER_NAME: "bench", GIT_COMMITTER_EMAIL: "bench@local" };
+  execSync("git init -q && git add -A && git commit -qm 'snapshot'", { cwd: dir, env: { ...process.env, ...id } });
+  return dir;
+}

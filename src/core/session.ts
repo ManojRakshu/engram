@@ -12,7 +12,7 @@ import {
   startSession,
   type ClaimResult,
 } from "../memory.js";
-import { buildPack, renderPack, type Pack } from "../pack.js";
+import { buildPack, renderCompact, renderPack, type Pack } from "../pack.js";
 import { repoSlug } from "../repo.js";
 import { loadConfig, type EngramConfig } from "./config.js";
 
@@ -59,7 +59,7 @@ export class EngramSession {
 
   static async open(opts: { root: string; agent: string; repo?: string; config?: Partial<EngramConfig> }) {
     const config = { ...loadConfig(opts.root), ...opts.config };
-    const graph = await RepoGraph.open(opts.repo ?? repoSlug(opts.root));
+    const graph = await RepoGraph.open(opts.repo ?? process.env.ENGRAM_REPO ?? repoSlug(opts.root));
     return new EngramSession(graph, opts.root, opts.agent, config);
   }
 
@@ -92,16 +92,18 @@ export class EngramSession {
     this.state = { graphSession: id, startedAt: Date.now() };
     if (!pack) return {};
 
-    const parts = [renderPack(pack)];
+    const compact = this.config.format === "compact";
+    const parts = [compact ? renderCompact(pack) : renderPack(pack)].filter(Boolean);
     if (this.config.memory) {
-      const procs = await knownProcedures(this.graph);
-      if (procs.length) parts.push(`### How to verify in this repo (worked before)\n${procs.map((p) => `- \`${p.cmd}\` (${p.ok}× ok)`).join("\n")}`);
+      const procs = await knownProcedures(this.graph, compact ? 2 : 3);
+      if (procs.length)
+        parts.push(compact ? `Verify (worked before): ${procs.map((p) => `\`${p.cmd}\``).join(" or ")}` : `### How to verify in this repo (worked before)\n${procs.map((p) => `- \`${p.cmd}\` (${p.ok}× ok)`).join("\n")}`);
       if (opts.parentSession && id) {
         const notes = await inbox(this.graph, id);
         if (notes.length) parts.push(`### Handoff notes\n${notes.map((n) => `- ${n.note}`).join("\n")}`);
       }
     }
-    return { context: parts.join("\n\n"), pack };
+    return { context: parts.join(compact ? "\n" : "\n\n") || undefined, pack };
   }
 
   async beforeEdit(file: string, intent = "edit"): Promise<ClaimResult & { reason?: string }> {

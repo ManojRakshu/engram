@@ -1,4 +1,4 @@
-import Parser from "web-tree-sitter";
+import type Parser from "web-tree-sitter";
 import { createRequire } from "node:module";
 import path from "node:path";
 
@@ -16,6 +16,8 @@ export interface ParsedSymbol {
   doc: string;
   parent?: string; // qualname of the enclosing class
   callNames: string[];
+  /** Identifiers and string-literal words used directly in the body (not in nested defs). */
+  bodyTokens: Set<string>;
 }
 
 export interface ParsedFile {
@@ -33,19 +35,23 @@ async function init() {
   // Bundled builds (the Claude Code plugin) ship the wasm files next to the bundle: ENGRAM_WASM_DIR.
   const bundled = process.env.ENGRAM_WASM_DIR;
   const runtime = bundled ? path.join(bundled, "tree-sitter.wasm") : undefined;
+  // web-tree-sitter (and its wasm runtime) is only loaded when a file actually needs parsing.
+  const Parser = (await import("web-tree-sitter")).default;
   await Parser.init(runtime ? { locateFile: () => runtime } : undefined);
+  ParserCtor = Parser;
   const dir = bundled ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
   for (const l of ["typescript", "tsx", "javascript", "python"] as Lang[]) {
-    languages.set(l, await Parser.Language.load(path.join(dir, `tree-sitter-${l}.wasm`)));
+    languages.set(l, await ParserCtor.Language.load(path.join(dir, `tree-sitter-${l}.wasm`)));
   }
 }
 
+let ParserCtor: typeof Parser;
 const parsers = new Map<Lang, Parser>();
 async function parserFor(lang: Lang) {
   await (ready ??= init());
   let p = parsers.get(lang);
   if (!p) {
-    p = new Parser();
+    p = new ParserCtor();
     p.setLanguage(languages.get(lang)!);
     parsers.set(lang, p);
   }
@@ -58,6 +64,9 @@ const NOISE = new Set(
     " ",
   ),
 );
+
+const IDENT = new Set(["identifier", "property_identifier", "field_identifier", "type_identifier", "shorthand_property_identifier"]);
+const STRING_PART = new Set(["string_fragment", "string_content", "string"]);
 
 function firstLine(text: string, max = 160) {
   const line = text.split("\n")[0].trim();
@@ -120,10 +129,16 @@ export async function parseTreeSitter(lang: Lang, source: string): Promise<Parse
         doc: docFor(node, lang),
         parent: def.kind === "method" ? cls : undefined,
         callNames: [],
+        bodyTokens: new Set(),
       };
       symbols.push(sym);
     }
 
+    const target0 = sym ?? owner;
+    if (target0 && target0.bodyTokens.size < 400) {
+      if (IDENT.has(node.type)) target0.bodyTokens.add(node.text);
+      else if (STRING_PART.has(node.type) && node.text.length <= 60) for (const w of node.text.match(/[A-Za-z_][A-Za-z0-9_]+/g) ?? []) target0.bodyTokens.add(w);
+    }
     if (node.type === "call_expression" || node.type === "new_expression" || node.type === "call") {
       const name = calleeName(node, lang);
       const target = sym ?? owner;

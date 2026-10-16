@@ -28,6 +28,8 @@ export interface Pack {
   tokens: number;
   ms: number;
   seeds: number;
+  /** How sure the graph is about the top locations; drives how much is injected. */
+  confidence: { level: "high" | "medium" | "low"; exact: boolean; topName: number; margin: number };
 }
 
 export interface PackOptions {
@@ -45,7 +47,7 @@ export interface PackOptions {
 export const RETRIEVERS: Record<RetrieverId, string> = {
   identifiers: "exact symbol names written in the task (`parse_args`, Option.get_default)",
   names: "task words in symbol names, idf-weighted and de-duplicated by hit pattern",
-  docs: "full-text match on docstrings",
+  docs: "idf-weighted match of task words against each symbol's body identifiers and string literals",
   paths: "full-text match on file paths",
   episodic: "files edited by past successful sessions on similar tasks",
   lessons: "lessons attached to code by earlier sessions",
@@ -60,6 +62,8 @@ const STOP = new Set(
 );
 
 const tok = (s: string) => Math.ceil(s.length / 4);
+const CODE_POW = Number(process.env.ENGRAM_CODE_POW ?? 1);
+const NAME_POW = Number(process.env.ENGRAM_NAME_POW ?? 1);
 
 /** How code abbreviates words people write in bug reports. Both directions are matched. */
 const ABBREV: Record<string, string[]> = {
@@ -119,16 +123,23 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
 
   // 1. Seeds — exact identifiers, full-text over symbol terms, file paths, past sessions, lessons.
   const kwStems = [...new Set(expandAbbrev(kw).map(stem))].filter((w) => w.length > 2);
-  const [exact, ftSym, ftFile, past, lessons, nameHits] = await Promise.all([
+  // Code search query: task words + their stems/abbreviations + words of identifiers written in the task.
+  const idWords = ids.flatMap((i) => terms(i).split(" ")).filter((w) => w.length > 1);
+  const codeWords = [...new Set([...kwStems, ...idWords.map(stem)])].filter((w) => w.length > 1);
+  const [exact, codeHits, ftFile, past, lessons, nameHits] = await Promise.all([
     ids.length
       ? g.read<{ id: string; name: string }>("pack.exact", "MATCH (s:Symbol) WHERE s.name IN $ids RETURN s.id AS id, s.name AS name LIMIT 40", { ids })
       : [],
-    q
-      ? g.read<{ id: string; score: number }>(
-          "pack.ftSymbol",
-          `CALL db.idx.fulltext.queryNodes('Symbol', $q) YIELD node, score WHERE NOT node.isTest AND NOT node.isAux
-           RETURN node.id AS id, score ORDER BY score DESC LIMIT 15`,
-          { q },
+    codeWords.length
+      ? g.read<{ id: string; hits: string[]; df: number[]; len: number }>(
+          "pack.code",
+          `UNWIND $kws AS k
+           MATCH (s:Symbol) WHERE NOT s.isTest AND NOT s.isAux AND s.bodyTerms CONTAINS (' ' + k + ' ')
+           WITH k, collect(s) AS ss
+           UNWIND ss AS s
+           WITH s, collect({k: k, df: size(ss)}) AS m
+           RETURN s.id AS id, [x IN m | x.k] AS hits, [x IN m | x.df] AS df, size(s.bodyTerms) AS len`,
+          { kws: codeWords },
         )
       : [],
     q
@@ -186,18 +197,29 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   }
   const named = nameHits
     .map((r) => {
-      const base = r.df.reduce((a, df) => a + idf(df), 0);
+      const base = r.df.reduce((a, df) => a + idf(df) ** NAME_POW, 0);
       return { ...r, s: base / Math.sqrt(groupSize.get([...r.hits].sort().join("+"))!) };
     })
     .sort((a, b) => b.s - a.s)
     .slice(0, 12);
   if (process.env.ENGRAM_DEBUG) console.error(named.map((n) => `${n.s.toFixed(2)} ${n.qualname} [${n.hits}]`).join("\n"));
   const maxNamed = Math.max(1e-9, ...named.map((r) => r.s));
+  // Confidence features: an exact identifier from the task, and how rare the words are that the best
+  // symbol name matched (idf mass), relative to the runner-up.
+  const topName = named[0]?.s ?? 0;
+  const margin = named.length > 1 ? topName - named[1].s : topName;
   for (const r of named) if (W("names")) bump(r.id, (2.2 * W("names") * r.s) / maxNamed, `name matches task (${r.hits.join(", ")})`);
 
-  // Docstring full-text is a weaker signal; it only nudges.
-  const maxSym = Math.max(1e-9, ...ftSym.map((r) => r.score));
-  for (const r of ftSym.slice(0, 15)) if (W("docs")) bump(r.id, (0.5 * W("docs") * r.score) / maxSym, "docs match task");
+  // Code search (BM25-style full text over each symbol's body identifiers, literals and docstring):
+  // the signal grep exploits, but ranked per symbol instead of per line.
+  // Coordinate match: rare task words used in the body count most; length is damped only mildly,
+  // because the big functions are where bugs usually live.
+  const code = codeHits
+    .map((r) => ({ ...r, s: r.df.reduce((a, df) => a + idf(df) ** CODE_POW, 0) / (1 + 0.15 * Math.log(1 + r.len / 200)) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 15);
+  const maxCode = Math.max(1e-9, ...code.map((r) => r.s));
+  for (const r of code) if (W("docs")) bump(r.id, (2 * W("docs") * r.s) / maxCode, `code uses ${r.hits.slice(0, 4).join(", ")}`);
 
   const seedFiles = new Map<string, { s: number; reason: string }>();
   const srcFiles = ftFile.filter((f) => !f.isTest && !f.isAux);
@@ -316,6 +338,12 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     tokens: 0,
     ms: 0,
     seeds: seeds.length,
+    confidence: {
+      level: exact.length > 0 || topName >= 9 ? "high" : topName >= 5.5 ? "medium" : "low",
+      exact: exact.length > 0,
+      topName: Math.round(topName * 100) / 100,
+      margin: Math.round(margin * 100) / 100,
+    },
   };
   let used = tok(renderPack(pack));
   let bodies = 0;
@@ -380,4 +408,23 @@ export function renderPack(p: Pack) {
   if (p.coChange.length) out.push(`\n### Usually changed together (git history)\n${p.coChange.map((c) => `- ${c.a} ↔ ${c.b} (${c.count} commits)`).join("\n")}`);
   if (p.history.length) out.push(`\n### Recent history\n${p.history.map((h) => `- ${h.path}: "${h.msg}" — ${h.author}`).join("\n")}`);
   return out.join("\n");
+}
+
+/**
+ * Agent-facing pack: a map, not content. Every injected token is re-read on every later turn,
+ * so this stays ~150-250 tokens: exact locations + why in a few words, tests, nothing else.
+ * (Harnesses like Claude Code require reading a file before editing it, so inlining bodies
+ * would cost tokens without saving a call.)
+ */
+export function renderCompact(p: Pack, maxItems = p.confidence.level === "low" ? 3 : 6) {
+  if (!p.items.length) return "";
+  const lines = [`[engram] Likely locations for this task (code graph, confidence ${p.confidence.level}):`];
+  for (const it of p.items.slice(0, maxItems)) {
+    const qual = it.id.split("#")[1]?.replace(/@\d+$/, "") ?? it.name;
+    const why = it.why[0]?.replace(/`/g, "").replace(/^matches task terms /, "") ?? "";
+    lines.push(`- ${it.path}:${it.startLine}-${it.endLine} ${qual}${why ? ` (${why.slice(0, 60)})` : ""}`);
+  }
+  if (p.tests.length) lines.push(`Tests: ${p.tests.slice(0, 3).join(", ")}`);
+  for (const l of p.lessons.slice(0, 2)) lines.push(`Lesson: ${l.text}${l.about ? ` (${l.about})` : ""}`);
+  return lines.join("\n");
 }

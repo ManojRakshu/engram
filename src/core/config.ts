@@ -10,6 +10,8 @@ export interface EngramConfig {
   contextPack: boolean;
   /** Token budget of the pack. */
   budget: number;
+  /** "compact" = ~200-token location map (default); "full" = signatures, why-paths, bodies, history. */
+  format: "compact" | "full";
   /** Episodic / semantic / procedural memory (sessions, lessons, verify commands). */
   memory: boolean;
   /** Cross-agent edit claims. */
@@ -25,6 +27,7 @@ export type RetrieverId = "identifiers" | "names" | "docs" | "paths" | "episodic
 export const DEFAULT_CONFIG: EngramConfig = {
   contextPack: true,
   budget: 2000,
+  format: "compact",
   memory: true,
   claims: true,
   history: true,
@@ -46,6 +49,7 @@ export function loadConfig(root: string): EngramConfig {
   const env: Partial<EngramConfig> = {};
   const e = process.env;
   if (e.ENGRAM_BUDGET) env.budget = Number(e.ENGRAM_BUDGET);
+  if (e.ENGRAM_FORMAT === "full" || e.ENGRAM_FORMAT === "compact") env.format = e.ENGRAM_FORMAT;
   if (bool(e.ENGRAM_PACK) !== undefined) env.contextPack = bool(e.ENGRAM_PACK)!;
   if (bool(e.ENGRAM_MEMORY) !== undefined) env.memory = bool(e.ENGRAM_MEMORY)!;
   if (bool(e.ENGRAM_CLAIMS) !== undefined) env.claims = bool(e.ENGRAM_CLAIMS)!;
