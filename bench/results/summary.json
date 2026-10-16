@@ -1,0 +1,451 @@
+{
+  "generatedAt": "2026-10-16T07:12:50.370Z",
+  "suites": [
+    {
+      "label": "click (pilot)",
+      "harness": "claude-code",
+      "model": "haiku",
+      "excluded": 1,
+      "agg": [
+        {
+          "config": "baseline",
+          "runs": 23,
+          "pass": 22,
+          "meanIn": 152436.08695652173,
+          "medianIn": 112749,
+          "meanUncached": 8772.260869565218,
+          "meanOut": 1739.1304347826087,
+          "meanCalls": 5.478260869565218,
+          "meanSec": 17.575565217391304,
+          "costPerRun": 0.004059464347826086
+        },
+        {
+          "config": "warm",
+          "runs": 24,
+          "pass": 24,
+          "meanIn": 112491.375,
+          "medianIn": 98020.5,
+          "meanUncached": 10628.041666666666,
+          "meanOut": 1573.2916666666667,
+          "meanCalls": 3.9166666666666665,
+          "meanSec": 14.920625,
+          "costPerRun": 0.003930045833333334
+        },
+        {
+          "config": "cold",
+          "runs": 24,
+          "pass": 23,
+          "meanIn": 102876.66666666667,
+          "medianIn": 99666.5,
+          "meanUncached": 10112.791666666666,
+          "meanOut": 1208.875,
+          "meanCalls": 3.6666666666666665,
+          "meanSec": 12.095166666666666,
+          "costPerRun": 0.0035538262500000007
+        }
+      ],
+      "tasks": [
+        {
+          "task": "clamp-max",
+          "baseline": {
+            "medianIn": 88722,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 99831.5,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 99666.5,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "clamp-open",
+          "baseline": {
+            "medianIn": 91226.5,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 74965,
+            "medianCalls": 2,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 88043.5,
+            "medianCalls": 2.5,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "bool-on",
+          "baseline": {
+            "medianIn": 91029,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 97329.5,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 97525.5,
+            "medianCalls": 3.5,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "split-opt",
+          "baseline": {
+            "medianIn": 618701.5,
+            "medianCalls": 19.5,
+            "pass": 1,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 336175.5,
+            "medianCalls": 11.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 151203,
+            "medianCalls": 7,
+            "pass": 1,
+            "runs": 2
+          }
+        },
+        {
+          "task": "short-help",
+          "baseline": {
+            "medianIn": 124999,
+            "medianCalls": 5,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 102029.5,
+            "medianCalls": 4.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 111411,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "measure-table",
+          "baseline": {
+            "medianIn": 117692.5,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 99862,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 114511.5,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "choice-case",
+          "baseline": {
+            "medianIn": 89379,
+            "medianCalls": 3.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 74767,
+            "medianCalls": 2.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 75188.5,
+            "medianCalls": 2.5,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "envvar-auto",
+          "baseline": {
+            "medianIn": 89022,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 76246,
+            "medianCalls": 2.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 89624,
+            "medianCalls": 3.5,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "envvar-nested",
+          "baseline": {
+            "medianIn": 116527,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 98999,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 99045,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "eager-order",
+          "baseline": {
+            "medianIn": 115410.5,
+            "medianCalls": 5.5,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 73542,
+            "medianCalls": 3,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 86504,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "style-bold",
+          "baseline": {
+            "medianIn": 110860,
+            "medianCalls": 4,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 72523,
+            "medianCalls": 2,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 76161,
+            "medianCalls": 2,
+            "pass": 2,
+            "runs": 2
+          }
+        },
+        {
+          "task": "join-options",
+          "baseline": {
+            "medianIn": 143957,
+            "medianCalls": 5,
+            "pass": 2,
+            "runs": 2
+          },
+          "warm": {
+            "medianIn": 143626.5,
+            "medianCalls": 6,
+            "pass": 2,
+            "runs": 2
+          },
+          "cold": {
+            "medianIn": 145636.5,
+            "medianCalls": 5,
+            "pass": 2,
+            "runs": 2
+          }
+        }
+      ]
+    }
+  ],
+  "retrieval": {
+    "pallets/click": {
+      "n": 12,
+      "top1": 3,
+      "top3": 5,
+      "top10": 8,
+      "fileTop3": 10,
+      "medianMs": 22,
+      "perTask": [
+        {
+          "task": "clamp-max",
+          "gold": "src/click/types.py#_NumberRangeBase.convert",
+          "rank": 3,
+          "fileRank": 1,
+          "ms": 34
+        },
+        {
+          "task": "clamp-open",
+          "gold": "src/click/types.py#IntRange._clamp",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 23
+        },
+        {
+          "task": "bool-on",
+          "gold": "src/click/types.py#BoolParamType",
+          "rank": 0,
+          "fileRank": 2,
+          "ms": 20
+        },
+        {
+          "task": "split-opt",
+          "gold": "src/click/parser.py#_split_opt",
+          "rank": 9,
+          "fileRank": 1,
+          "ms": 26
+        },
+        {
+          "task": "short-help",
+          "gold": "src/click/utils.py#_make_default_short_help",
+          "rank": 5,
+          "fileRank": 2,
+          "ms": 24
+        },
+        {
+          "task": "measure-table",
+          "gold": "src/click/formatting.py#measure_table",
+          "rank": 0,
+          "fileRank": 0,
+          "ms": 22
+        },
+        {
+          "task": "choice-case",
+          "gold": "src/click/types.py#Choice.normalize_choice",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 18
+        },
+        {
+          "task": "envvar-auto",
+          "gold": "src/click/core.py#Option.resolve_envvar_value",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 26
+        },
+        {
+          "task": "envvar-nested",
+          "gold": "src/click/core.py#Context.__init__",
+          "rank": 5,
+          "fileRank": 1,
+          "ms": 19
+        },
+        {
+          "task": "eager-order",
+          "gold": "src/click/core.py#sort_key",
+          "rank": 0,
+          "fileRank": 3,
+          "ms": 18
+        },
+        {
+          "task": "style-bold",
+          "gold": "src/click/termui.py#style",
+          "rank": 2,
+          "fileRank": 1,
+          "ms": 17
+        },
+        {
+          "task": "join-options",
+          "gold": "src/click/formatting.py#join_options",
+          "rank": 0,
+          "fileRank": 0,
+          "ms": 19
+        }
+      ]
+    },
+    "networkx/networkx": {
+      "n": 6,
+      "top1": 3,
+      "top3": 4,
+      "top10": 6,
+      "fileTop3": 6,
+      "medianMs": 87,
+      "perTask": [
+        {
+          "task": "sspl-level",
+          "gold": "networkx/algorithms/shortest_paths/unweighted.py#_single_shortest_path_length",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 87
+        },
+        {
+          "task": "dijkstra-relax",
+          "gold": "networkx/algorithms/shortest_paths/weighted.py#_dijkstra_multisource",
+          "rank": 5,
+          "fileRank": 1,
+          "ms": 96
+        },
+        {
+          "task": "components-bfs",
+          "gold": "networkx/algorithms/components/connected.py#_plain_bfs",
+          "rank": 3,
+          "fileRank": 1,
+          "ms": 63
+        },
+        {
+          "task": "triangles-selfloop",
+          "gold": "networkx/algorithms/cluster.py#_triangles_and_degree_iter",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 76
+        },
+        {
+          "task": "topo-generations",
+          "gold": "networkx/algorithms/dag.py#topological_generations",
+          "rank": 1,
+          "fileRank": 1,
+          "ms": 62
+        },
+        {
+          "task": "bellman-count",
+          "gold": "networkx/algorithms/shortest_paths/weighted.py#_inner_bellman_ford",
+          "rank": 6,
+          "fileRank": 1,
+          "ms": 90
+        }
+      ]
+    }
+  }
+}

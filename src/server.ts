@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
@@ -127,17 +127,8 @@ app.get("/api/:repo/memory", async (c) => {
 app.get("/api/latency", (c) => c.json(latencyStats()));
 
 app.get("/api/bench", (c) => {
-  if (!existsSync(benchDir)) return c.json([]);
-  const rows = readdirSync(benchDir)
-    .filter((f) => f.endsWith(".jsonl"))
-    .sort()
-    .flatMap((f) =>
-      readFileSync(path.join(benchDir, f), "utf8")
-        .split("\n")
-        .filter(Boolean)
-        .map((l) => ({ file: f, ...JSON.parse(l) })),
-    );
-  return c.json(rows);
+  const f = path.join(benchDir, "summary.json");
+  return c.json(existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : { suites: [], retrieval: null });
 });
 
 app.get("/*", (c) => {

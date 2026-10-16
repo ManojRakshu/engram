@@ -76,12 +76,12 @@
     </section>
 
     <section id="tab-bench" class="tab">
-      <div class="panel"><h3>Same model, same tasks, same harness — with and without the graph</h3><p class="muted">Injected real bugs in <code>pallets/click</code>; the agent only sees a symptom report. A run passes when the full test suite passes. Baseline = plain <code>pi</code>. Cold = Engram with empty memory each task. Warm = memory carried across tasks.</p><div id="bench-summary"></div><div id="bench-chart"></div><div id="bench-table"></div></div>
+      <div class="panel"><h3>Same model, same tasks, same harness — with and without the graph</h3><p class="muted">Real bugs injected into <code>pallets/click</code> and <code>networkx</code>; the agent only sees a user-style symptom report, in a fresh snapshot with no git history to peek at. A run counts as fixed when the project's test suite passes. Same model, same harness (Claude Code headless); the only difference is the Engram plugin. Cold = empty memory for every task; warm = memory carried across tasks.</p><div id="bench-summary"></div><div id="bench-chart"></div><div id="bench-table"></div></div>
       <div class="panel"><h3>Graph query latency <small>(this server, live)</small></h3><div id="latency"></div></div>
     </section>
   </main>
 
-  <footer>Engram · <a href="https://github.com/" id="repo-link">source</a> · graph by <a href="https://www.falkordb.com">FalkorDB</a> · harness by <a href="https://pi.dev">pi</a></footer>
+  <footer>Engram · <a href="https://github.com/" id="repo-link">source</a> · graph by <a href="https://www.falkordb.com">FalkorDB</a> · works with Claude Code, pi, and any MCP or CLI agent</footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
   <script src="app.js" type="module"></script>

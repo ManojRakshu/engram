@@ -159,38 +159,34 @@ async function loadWhy(p) {
 
 // ---------- bench ----------
 async function loadBench() {
-  const [rows, lat] = await Promise.all([api("bench"), api("latency")]);
-  const latest = rows.length ? rows.filter((r) => r.file === rows[rows.length - 1].file) : [];
-  const by = {};
-  for (const r of latest) (by[r.config] ??= []).push(r);
-  const agg = Object.entries(by).map(([c, rs]) => ({
-    c,
-    n: rs.length,
-    pass: rs.filter((r) => r.pass).length,
-    tin: rs.reduce((a, r) => a + r.tokens.totalIn, 0) / rs.length,
-    tout: rs.reduce((a, r) => a + r.tokens.output, 0) / rs.length,
-    calls: rs.reduce((a, r) => a + r.toolCalls, 0) / rs.length,
-    time: rs.reduce((a, r) => a + r.wallMs, 0) / rs.length / 1000,
-    cost: rs.reduce((a, r) => a + r.cost, 0),
-  }));
-  if (!agg.length) {
-    $("#bench-summary").innerHTML = `<p class="muted">No benchmark results on this server yet.</p>`;
-  } else {
-    const base = agg.find((a) => a.c === "baseline");
-    const best = agg.find((a) => a.c === "warm") ?? agg.find((a) => a.c === "cold");
+  const [b, lat] = await Promise.all([api("bench"), api("latency")]);
+  const pct = (a, base) => `${Math.round((1 - a / base) * 100)}%`;
+  const color = { baseline: css("--muted"), cold: css("--blue"), warm: css("--accent") };
+  const label = { baseline: "Claude Code", cold: "+ Engram (cold)", warm: "+ Engram (warm memory)" };
+  let html = "";
+  for (const s of b.suites ?? []) {
+    const base = s.agg.find((a) => a.config === "baseline");
+    const best = [...s.agg].filter((a) => a.config !== "baseline").sort((x, y) => x.meanIn - y.meanIn)[0];
+    html += `<h3 style="margin-top:18px">${esc(s.label)} <small>${esc(s.harness ?? "")} · ${esc(s.model ?? "")}${s.excluded ? ` · ${s.excluded} errored runs excluded` : ""}</small></h3>`;
     if (base && best) {
-      const pct = (a, b) => `${Math.round((1 - a / b) * 100)}%`;
-      $("#bench-summary").innerHTML = `<div class="headline">
-        <div class="stat"><b>${pct(best.tin, base.tin)}</b><span>fewer input tokens</span></div>
-        <div class="stat"><b>${pct(best.calls, base.calls)}</b><span>fewer tool calls</span></div>
-        <div class="stat"><b>${best.pass}/${best.n} vs ${base.pass}/${base.n}</b><span>bugs fixed (Engram vs baseline)</span></div>
-        <div class="stat"><b>${pct(best.cost, base.cost)}</b><span>lower cost</span></div></div>`;
+      html += `<div class="headline">
+        <div class="stat"><b>${pct(best.meanIn, base.meanIn)}</b><span>fewer input tokens</span></div>
+        <div class="stat"><b>${pct(best.meanCalls, base.meanCalls)}</b><span>fewer tool calls</span></div>
+        <div class="stat"><b>${pct(best.meanSec, base.meanSec)}</b><span>faster</span></div>
+        <div class="stat"><b>${best.pass}/${best.runs}</b><span>fixed (baseline ${base.pass}/${base.runs})</span></div></div>`;
     }
-    const maxT = Math.max(...agg.map((a) => a.tin));
-    const color = { baseline: css("--muted"), cold: css("--blue"), warm: css("--accent") };
-    $("#bench-chart").innerHTML = `<div class="bars">${agg.map((a) => `<div class="bar-row"><span>${a.c}</span><div class="bar" style="width:${(100 * a.tin) / maxT}%;background:${color[a.c] ?? css("--green")}"></div><span class="mono">${Math.round(a.tin).toLocaleString()}</span></div>`).join("")}</div><p class="muted">Average input tokens per task (including cached), ${latest[0]?.model ?? ""}</p>`;
-    $("#bench-table").innerHTML = `<table><tr><th>config</th><th class="num">pass</th><th class="num">avg input tok</th><th class="num">avg output tok</th><th class="num">avg tool calls</th><th class="num">avg time</th><th class="num">total $</th></tr>${agg.map((a) => `<tr><td>${a.c}</td><td class="num">${a.pass}/${a.n}</td><td class="num">${Math.round(a.tin).toLocaleString()}</td><td class="num">${Math.round(a.tout).toLocaleString()}</td><td class="num">${a.calls.toFixed(1)}</td><td class="num">${a.time.toFixed(1)}s</td><td class="num">${a.cost.toFixed(3)}</td></tr>`).join("")}</table>`;
+    const maxT = Math.max(...s.agg.map((a) => a.meanIn));
+    html += `<div class="bars">${s.agg.map((a) => `<div class="bar-row"><span>${label[a.config] ?? a.config}</span><div class="bar" style="width:${(100 * a.meanIn) / maxT}%;background:${color[a.config] ?? css("--green")}"></div><span class="mono">${Math.round(a.meanIn).toLocaleString()}</span></div>`).join("")}</div>`;
+    html += `<table><tr><th>setup</th><th class="num">fixed</th><th class="num">mean input tok</th><th class="num">median input tok</th><th class="num">tool calls</th><th class="num">time</th><th class="num">$ / run</th></tr>${s.agg.map((a) => `<tr><td>${label[a.config] ?? a.config}</td><td class="num">${a.pass}/${a.runs}</td><td class="num">${Math.round(a.meanIn).toLocaleString()}</td><td class="num">${Math.round(a.medianIn).toLocaleString()}</td><td class="num">${a.meanCalls.toFixed(1)}</td><td class="num">${a.meanSec.toFixed(1)}s</td><td class="num">${a.costPerRun.toFixed(4)}</td></tr>`).join("")}</table>`;
+    const cfgs = s.agg.map((a) => a.config);
+    html += `<details><summary class="muted">per task (median input tokens / tool calls)</summary><table><tr><th>task</th>${cfgs.map((c) => `<th class="num">${label[c] ?? c}</th>`).join("")}</tr>${s.tasks.map((t) => `<tr><td class="mono">${esc(t.task)}</td>${cfgs.map((c) => (t[c] ? `<td class="num">${Math.round(t[c].medianIn).toLocaleString()} / ${t[c].medianCalls} <span class="muted">(${t[c].pass}/${t[c].runs})</span></td>` : "<td></td>")).join("")}</tr>`).join("")}</table></details>`;
   }
+  if (b.retrieval) {
+    html += `<h3 style="margin-top:18px">Retrieval alone (0 LLM tokens)</h3><table><tr><th>repo</th><th class="num">bug's function #1</th><th class="num">in top 3</th><th class="num">in top 10</th><th class="num">bug's file in top 3</th><th class="num">median ms</th></tr>${Object.entries(b.retrieval).map(([r, v]) => `<tr><td>${esc(r)}</td><td class="num">${v.top1}/${v.n}</td><td class="num">${v.top3}/${v.n}</td><td class="num">${v.top10}/${v.n}</td><td class="num">${v.fileTop3}/${v.n}</td><td class="num">${v.medianMs}</td></tr>`).join("")}</table>`;
+  }
+  $("#bench-summary").innerHTML = html || `<p class="muted">No benchmark results on this server yet.</p>`;
+  $("#bench-chart").innerHTML = "";
+  $("#bench-table").innerHTML = "";
   const L = Object.entries(lat).filter(([k]) => /^(pack|impact|lookup|why|mem|coord)\./.test(k));
   $("#latency").innerHTML = L.length
     ? `<table><tr><th>query</th><th class="num">n</th><th class="num">p50 ms</th><th class="num">p95 ms</th><th class="num">p99 ms</th></tr>${L.map(([k, v]) => `<tr><td class="mono">${esc(k)}</td><td class="num">${v.n}</td><td class="num">${v.p50}</td><td class="num">${v.p95}</td><td class="num">${v.p99}</td></tr>`).join("")}</table>`
