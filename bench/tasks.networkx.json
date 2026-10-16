@@ -1,0 +1,50 @@
+{
+  "repo": "networkx/networkx",
+  "sha": "6da4704cbf32ba6f50f6d9c46cc0a071e3a87985",
+  "venv": "../.venv-nx",
+  "test": "python -m pytest -q -x -p no:cacheprovider -n 6 networkx/algorithms",
+  "tasks": [
+    {
+      "id": "sspl-level",
+      "file": "networkx/algorithms/shortest_paths/unweighted.py",
+      "old": "    while nextlevel and cutoff > level:\n        level += 1\n        thislevel = nextlevel\n        nextlevel = []\n        for v in thislevel:\n            for w in adj[v]:\n                if w not in seen:\n                    seen.add(w)\n                    nextlevel.append(w)\n                    yield (w, level)",
+      "new": "    while nextlevel and cutoff > level:\n        level += 2\n        thislevel = nextlevel\n        nextlevel = []\n        for v in thislevel:\n            for w in adj[v]:\n                if w not in seen:\n                    seen.add(w)\n                    nextlevel.append(w)\n                    yield (w, level)",
+      "symptom": "`nx.single_source_shortest_path_length(nx.path_graph(4), 0)` returns `{0: 0, 1: 2, 2: 4, 3: 6}`; every unweighted distance is doubled."
+    },
+    {
+      "id": "dijkstra-relax",
+      "file": "networkx/algorithms/shortest_paths/weighted.py",
+      "old": "            elif u not in seen or vu_dist < seen[u]:\n                seen[u] = vu_dist\n                heappush(fringe, (vu_dist, next(c), u))",
+      "new": "            elif u not in seen or vu_dist > seen[u]:\n                seen[u] = vu_dist\n                heappush(fringe, (vu_dist, next(c), u))",
+      "symptom": "`nx.dijkstra_path_length` sometimes returns a longer distance than the true shortest path: when a node is first discovered through an expensive edge, a cheaper route found later is ignored."
+    },
+    {
+      "id": "components-bfs",
+      "file": "networkx/algorithms/components/connected.py",
+      "old": "            if len(seen) == n:\n                return seen\n    return seen",
+      "new": "            if len(seen) >= 2:\n                return seen\n    return seen",
+      "symptom": "`nx.connected_components` splits large components: on `nx.path_graph(5)` it yields several small sets instead of one set with all 5 nodes, so `nx.number_connected_components` is wrong."
+    },
+    {
+      "id": "triangles-selfloop",
+      "file": "networkx/algorithms/cluster.py",
+      "old": "    for v, v_nbrs in nodes_nbrs:\n        vs = G._adj[v].keys() - {v}\n        gen_degree = Counter(len(vs & G._adj[w].keys()) - (w in G._adj[w]) for w in vs)",
+      "new": "    for v, v_nbrs in nodes_nbrs:\n        vs = G._adj[v].keys()\n        gen_degree = Counter(len(vs & G._adj[w].keys()) - (w in G._adj[w]) for w in vs)",
+      "symptom": "`nx.triangles` and `nx.clustering` give wrong values when the graph has self-loops; self-loops should be ignored but now change the results."
+    },
+    {
+      "id": "topo-generations",
+      "file": "networkx/algorithms/dag.py",
+      "old": "                    indegree_map[child] -= len(G[node][child]) if multigraph else 1",
+      "new": "                    indegree_map[child] -= len(G[node][child]) if multigraph else 2",
+      "symptom": "`list(nx.topological_sort(G))` is wrong for DAGs where a node has a single parent: on `nx.DiGraph([(1, 2), (2, 3)])` it raises or omits nodes instead of returning `[1, 2, 3]`."
+    },
+    {
+      "id": "bellman-count",
+      "file": "networkx/algorithms/shortest_paths/weighted.py",
+      "old": "                        count_v = count.get(v, 0) + 1\n                        if count_v == n:",
+      "new": "                        count_v = count.get(v, 0) + 1\n                        if count_v == 2:",
+      "symptom": "`nx.bellman_ford_path_length` raises `NetworkXUnbounded` (\"Negative cycle detected\") on ordinary weighted graphs that have no negative cycles at all."
+    }
+  ]
+}

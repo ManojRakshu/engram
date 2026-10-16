@@ -258,7 +258,8 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
       `UNWIND $seeds AS sd
        MATCH (s:Symbol {id: sd})
        CALL {
-         WITH s MATCH (s)-[c:CALLS]->(n:Symbol) RETURN n, 'is called by' AS rel, c.weight * 0.4 AS w
+         WITH s MATCH (s)-[c:CALLS]->(n:Symbol)
+         RETURN n, 'is called by' AS rel, c.weight * CASE WHEN size(s.callNames) <= 6 THEN 0.75 ELSE 0.4 END AS w
          UNION
          WITH s MATCH (n:Symbol)-[c:CALLS]->(s) WHERE NOT n.isTest RETURN n, 'calls' AS rel, c.weight * 0.3 AS w
          UNION
@@ -271,6 +272,30 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     for (const r of nb) {
       if (r.id === r.seed) continue;
       if (W("graph")) bump(r.id, (seedScore.get(r.seed) ?? 0) * r.w * W("graph"), `${r.rel} \`${r.seedName}\``);
+    }
+
+    // Delegation chains: a public API named in the task is usually a thin wrapper around a private
+    // implementation 2-4 calls down (dijkstra_path_length -> ... -> _dijkstra_multisource). Follow
+    // CALLS through thin functions only (few distinct callees; docstrings make line counts useless),
+    // so the walk stays narrow.
+    const named = exact.map((e) => e.id);
+    if (named.length && W("graph")) {
+      const chains = await g.read<{ seed: string; seedName: string; id: string; hops: number; via: string[] }>(
+        "pack.delegation",
+        `UNWIND $ids AS sd
+         MATCH (s:Symbol {id: sd}) WHERE size(s.callNames) <= 6
+         MATCH p = (s)-[:CALLS*1..4]->(n:Symbol)
+         WHERE NOT n.isTest AND all(x IN nodes(p)[1..size(nodes(p)) - 1] WHERE size(x.callNames) <= 6)
+         WITH sd, s, n, min(length(p)) AS hops, collect(p)[0] AS sp
+         RETURN sd AS seed, s.qualname AS seedName, n.id AS id, hops, [x IN nodes(sp) | x.name] AS via
+         LIMIT 60`,
+        { ids: named },
+      );
+      for (const r of chains) {
+        if (r.id === r.seed) continue;
+        const w = r.hops === 1 ? 0.8 : r.hops === 2 ? 0.7 : r.hops === 3 ? 0.55 : 0.45;
+        bump(r.id, (seedScore.get(r.seed) ?? 3) * w * W("graph"), `implements \`${r.seedName}\` via ${r.via.slice(1, -1).join(" → ") || "direct call"}`);
+      }
     }
   }
 

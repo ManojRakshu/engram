@@ -3,7 +3,7 @@ import path from "node:path";
 import { applyTask, loadSuite, resetRepo, runTests } from "./tasks.ts";
 const [suitePath, root] = process.argv.slice(2);
 const suite = loadSuite(suitePath);
-const env = { ...process.env, PATH: `${path.resolve(root, "../.venv-click/bin")}:${process.env.PATH}` };
+const env = { ...process.env, PATH: `${path.resolve(root, (suite as { venv?: string }).venv ?? "../.venv-click", "bin")}:${process.env.PATH}` };
 resetRepo(root, suite);
 console.log("clean:", runTests(root, suite, env).pass ? "PASS" : "FAIL");
 for (const t of suite.tasks) {

@@ -65,14 +65,13 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
   );
 
   const candidates = only ? only.filter((f) => allSet.has(f) || known.has(f)) : all;
-  const changed: { path: string; hash: string; parsed: ParsedFile }[] = [];
+  // Pass 1: hash only (cheap) to find what changed. Pass 2 parses and writes in small batches,
+  // releasing each batch — peak memory stays flat no matter how big the repo is.
+  const changed: { path: string; hash: string }[] = [];
   for (const f of candidates) {
     if (!allSet.has(f)) continue;
-    const src = readFileSync(path.join(root, f), "utf8");
-    const hash = createHash("sha1").update(src).digest("hex");
-    if (known.get(f) === hash) continue;
-    const parsed = await languageFor(f)?.parse(f, src);
-    if (parsed) changed.push({ path: f, hash, parsed });
+    const hash = createHash("sha1").update(readFileSync(path.join(root, f))).digest("hex");
+    if (known.get(f) !== hash) changed.push({ path: f, hash });
   }
   const removed = only ? candidates.filter((f) => !allSet.has(f) && known.has(f)) : [...known.keys()].filter((f) => !allSet.has(f));
 
@@ -93,7 +92,16 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
   if (removed.length) await g.write("index.removeFiles", "MATCH (f:File) WHERE f.path IN $paths DETACH DELETE f", { paths: removed });
 
   let symbolCount = 0;
+  const importRows: { from: string; to: string }[] = [];
   for (const batch of chunks(changed, 50)) {
+    const parsedBatch: { path: string; hash: string; parsed: ParsedFile }[] = [];
+    for (const c of batch) {
+      const parsed = await languageFor(c.path)?.parse(c.path, readFileSync(path.join(root, c.path), "utf8"));
+      if (!parsed) continue;
+      parsedBatch.push({ ...c, parsed });
+      for (const spec of parsed.imports)
+        for (const to of languageFor(c.path)?.resolveImport?.(c.path, spec, allSet) ?? []) importRows.push({ from: c.path, to });
+    }
     await g.write(
       "index.files",
       `UNWIND $files AS f
@@ -103,7 +111,7 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
        MATCH (r:Repo {name: $repo}) MERGE (r)-[:HAS]->(file)`,
       {
         repo: g.repo,
-        files: batch.map((c) => ({
+        files: parsedBatch.map((c) => ({
           path: c.path,
           hash: c.hash,
           lang: c.parsed.lang,
@@ -114,7 +122,7 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
         })),
       },
     );
-    const syms = batch.flatMap((c) => symbolRows(c.path, c.parsed));
+    const syms = parsedBatch.flatMap((c) => symbolRows(c.path, c.parsed));
     symbolCount += syms.length;
     for (const sb of chunks(syms, 500)) {
       await g.write(
@@ -129,18 +137,17 @@ export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Pr
     }
   }
   if (changed.length) {
-    await g.write(
-      "index.members",
-      `MATCH (m:Symbol) WHERE m.path IN $paths AND m.parentId <> ''
-       MATCH (c:Symbol {id: m.parentId}) MERGE (c)-[:HAS_MEMBER]->(m)`,
-      { paths: changed.map((c) => c.path) },
-    );
+    for (const b of chunks(changed, 500)) {
+      await g.write(
+        "index.members",
+        `MATCH (m:Symbol) WHERE m.path IN $paths AND m.parentId <> ''
+         MATCH (c:Symbol {id: m.parentId}) MERGE (c)-[:HAS_MEMBER]->(m)`,
+        { paths: b.map((c) => c.path) },
+      );
+    }
   }
 
-  // Imports (file -> file)
-  const importRows = changed.flatMap((c) =>
-    c.parsed.imports.flatMap((spec) => (languageFor(c.path)?.resolveImport?.(c.path, spec, allSet) ?? []).map((to) => ({ from: c.path, to }))),
-  );
+  // Imports (file -> file), written once every file node exists.
   for (const b of chunks(importRows, 1000)) {
     await g.write(
       "index.imports",

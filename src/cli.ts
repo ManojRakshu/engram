@@ -1,4 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --liftoff-only
+// --liftoff-only: V8's optimizing wasm tier turns tree-sitter's parse tables into ~600 MB of machine
+// code; the baseline tier parses ~40% slower but peaks around 100 MB. Engram is a sidecar, so memory wins.
 import path from "node:path";
 import { close, latencyStats, RepoGraph } from "./db.js";
 import { indexRepo } from "./indexer/index.js";

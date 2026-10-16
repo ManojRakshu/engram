@@ -39,10 +39,17 @@ async function init() {
   const Parser = (await import("web-tree-sitter")).default;
   await Parser.init(runtime ? { locateFile: () => runtime } : undefined);
   ParserCtor = Parser;
-  const dir = bundled ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
-  for (const l of ["typescript", "tsx", "javascript", "python"] as Lang[]) {
-    languages.set(l, await ParserCtor.Language.load(path.join(dir, `tree-sitter-${l}.wasm`)));
+}
+
+/** Grammars compile on first use only: a Python repo never pays for the TypeScript grammar. */
+async function grammar(l: Lang) {
+  let lang = languages.get(l);
+  if (!lang) {
+    const dir = process.env.ENGRAM_WASM_DIR ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
+    lang = await ParserCtor.Language.load(path.join(dir, `tree-sitter-${l}.wasm`));
+    languages.set(l, lang);
   }
+  return lang;
 }
 
 let ParserCtor: typeof Parser;
@@ -52,7 +59,7 @@ async function parserFor(lang: Lang) {
   let p = parsers.get(lang);
   if (!p) {
     p = new ParserCtor();
-    p.setLanguage(languages.get(lang)!);
+    p.setLanguage(await grammar(lang));
     parsers.set(lang, p);
   }
   return p;
