@@ -5,3 +5,4 @@ dist/
 bench/results/raw/
 bench/work/
 *.log
+bench/results/streams/

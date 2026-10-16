@@ -1,300 +1,606 @@
 {
-  "generatedAt": "2026-10-16T07:12:50.370Z",
+  "generatedAt": "2026-10-16T10:01:31.999Z",
   "suites": [
     {
-      "label": "click (pilot)",
+      "label": "pallets/click: 12 bugs x 3 repeats",
       "harness": "claude-code",
       "model": "haiku",
-      "excluded": 1,
+      "excluded": 0,
+      "timeouts": 0,
       "agg": [
         {
           "config": "baseline",
-          "runs": 23,
-          "pass": 22,
-          "meanIn": 152436.08695652173,
-          "medianIn": 112749,
-          "meanUncached": 8772.260869565218,
-          "meanOut": 1739.1304347826087,
-          "meanCalls": 5.478260869565218,
-          "meanSec": 17.575565217391304,
-          "costPerRun": 0.004059464347826086
+          "runs": 36,
+          "pass": 36,
+          "meanIn": 137600.08333333334,
+          "medianIn": 114704,
+          "meanUncached": 8717.472222222223,
+          "meanOut": 1773.138888888889,
+          "meanCalls": 5.055555555555555,
+          "meanSec": 16.42666666666667,
+          "costPerRun": 0.0036357129166666663
         },
         {
-          "config": "warm",
-          "runs": 24,
-          "pass": 24,
-          "meanIn": 112491.375,
-          "medianIn": 98020.5,
-          "meanUncached": 10628.041666666666,
-          "meanOut": 1573.2916666666667,
-          "meanCalls": 3.9166666666666665,
-          "meanSec": 14.920625,
-          "costPerRun": 0.003930045833333334
+          "config": "cbm",
+          "runs": 36,
+          "pass": 36,
+          "meanIn": 126911.80555555556,
+          "medianIn": 121922,
+          "meanUncached": 9679.666666666666,
+          "meanOut": 1255.111111111111,
+          "meanCalls": 4.694444444444445,
+          "meanSec": 13.425805555555554,
+          "costPerRun": 0.0034755665277777775
         },
         {
           "config": "cold",
-          "runs": 24,
-          "pass": 23,
-          "meanIn": 102876.66666666667,
-          "medianIn": 99666.5,
-          "meanUncached": 10112.791666666666,
-          "meanOut": 1208.875,
-          "meanCalls": 3.6666666666666665,
-          "meanSec": 12.095166666666666,
-          "costPerRun": 0.0035538262500000007
+          "runs": 36,
+          "pass": 35,
+          "meanIn": 103467.47222222222,
+          "medianIn": 96129,
+          "meanUncached": 10032.694444444445,
+          "meanOut": 1209.4166666666667,
+          "meanCalls": 3.611111111111111,
+          "meanSec": 12.661611111111112,
+          "costPerRun": 0.003306510972222223
+        },
+        {
+          "config": "warm",
+          "runs": 36,
+          "pass": 35,
+          "meanIn": 104346.75,
+          "medianIn": 98656,
+          "meanUncached": 10044.944444444445,
+          "meanOut": 1221.3333333333333,
+          "meanCalls": 3.7777777777777777,
+          "meanSec": 13.236833333333333,
+          "costPerRun": 0.0033305236111111115
         }
       ],
       "tasks": [
         {
           "task": "clamp-max",
           "baseline": {
-            "medianIn": 88722,
+            "medianIn": 89360,
             "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 99831.5,
+          "cbm": {
+            "medianIn": 96935,
             "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 99666.5,
+            "medianIn": 73367,
+            "medianCalls": 2,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 99341,
             "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "clamp-open",
           "baseline": {
-            "medianIn": 91226.5,
+            "medianIn": 113711,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 74965,
-            "medianCalls": 2,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 121575,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 88043.5,
-            "medianCalls": 2.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 75203,
+            "medianCalls": 2,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 100146,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "bool-on",
           "baseline": {
-            "medianIn": 91029,
-            "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 117161,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 97329.5,
-            "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 121907,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 97525.5,
-            "medianCalls": 3.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 96134,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 97692,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "split-opt",
           "baseline": {
-            "medianIn": 618701.5,
-            "medianCalls": 19.5,
-            "pass": 1,
-            "runs": 2
+            "medianIn": 190952,
+            "medianCalls": 8,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 336175.5,
-            "medianCalls": 11.5,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 172205,
+            "medianCalls": 8,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 151203,
+            "medianIn": 161617,
             "medianCalls": 7,
-            "pass": 1,
-            "runs": 2
+            "pass": 2,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 189838,
+            "medianCalls": 8,
+            "pass": 2,
+            "runs": 3
           }
         },
         {
           "task": "short-help",
           "baseline": {
-            "medianIn": 124999,
+            "medianIn": 139893,
             "medianCalls": 5,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 102029.5,
-            "medianCalls": 4.5,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 96222,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 111411,
+            "medianIn": 75248,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 99303,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "measure-table",
           "baseline": {
-            "medianIn": 117692.5,
+            "medianIn": 117620,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 99862,
-            "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 127540,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 114511.5,
+            "medianIn": 125963,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 101458,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "choice-case",
           "baseline": {
-            "medianIn": 89379,
-            "medianCalls": 3.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 112298,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 74767,
-            "medianCalls": 2.5,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 96623,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 75188.5,
-            "medianCalls": 2.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 76181,
+            "medianCalls": 2,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 76484,
+            "medianCalls": 2,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "envvar-auto",
           "baseline": {
-            "medianIn": 89022,
-            "medianCalls": 3,
-            "pass": 1,
-            "runs": 1
+            "medianIn": 88924,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 76246,
-            "medianCalls": 2.5,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 95136,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 89624,
-            "medianCalls": 3.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 76325,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 76580,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "envvar-nested",
           "baseline": {
-            "medianIn": 116527,
+            "medianIn": 118931,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 98999,
-            "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 122353,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 99045,
+            "medianIn": 99926,
             "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 98758,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "eager-order",
           "baseline": {
-            "medianIn": 115410.5,
-            "medianCalls": 5.5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 114120,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 73542,
-            "medianCalls": 3,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 120089,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 86504,
-            "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 72493,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 97398,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "style-bold",
           "baseline": {
-            "medianIn": 110860,
+            "medianIn": 108481,
             "medianCalls": 4,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 72523,
-            "medianCalls": 2,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 116626,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 76161,
-            "medianCalls": 2,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 95101,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 97479,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
           }
         },
         {
           "task": "join-options",
           "baseline": {
-            "medianIn": 143957,
-            "medianCalls": 5,
-            "pass": 2,
-            "runs": 2
+            "medianIn": 117850,
+            "medianCalls": 4,
+            "pass": 3,
+            "runs": 3
           },
-          "warm": {
-            "medianIn": 143626.5,
-            "medianCalls": 6,
-            "pass": 2,
-            "runs": 2
+          "cbm": {
+            "medianIn": 150736,
+            "medianCalls": 5,
+            "pass": 3,
+            "runs": 3
           },
           "cold": {
-            "medianIn": 145636.5,
+            "medianIn": 97047,
+            "medianCalls": 3,
+            "pass": 3,
+            "runs": 3
+          },
+          "warm": {
+            "medianIn": 126166,
             "medianCalls": 5,
-            "pass": 2,
-            "runs": 2
+            "pass": 3,
+            "runs": 3
+          }
+        }
+      ]
+    },
+    {
+      "label": "networkx (128k LOC): 6 bugs x 1 repeat",
+      "harness": "claude-code",
+      "model": "haiku",
+      "excluded": 0,
+      "timeouts": 0,
+      "agg": [
+        {
+          "config": "baseline",
+          "runs": 6,
+          "pass": 6,
+          "meanIn": 110411.5,
+          "medianIn": 107721,
+          "meanUncached": 10180.333333333334,
+          "meanOut": 1386,
+          "meanCalls": 4.666666666666667,
+          "meanSec": 22.968666666666667,
+          "costPerRun": 0.003436065833333333
+        },
+        {
+          "config": "cbm",
+          "runs": 6,
+          "pass": 6,
+          "meanIn": 102815.83333333333,
+          "medianIn": 107157,
+          "meanUncached": 11194.666666666666,
+          "meanOut": 813.3333333333334,
+          "meanCalls": 4.333333333333333,
+          "meanSec": 19.663,
+          "costPerRun": 0.0034037116666666666
+        },
+        {
+          "config": "warm",
+          "runs": 6,
+          "pass": 6,
+          "meanIn": 92220,
+          "medianIn": 64573,
+          "meanUncached": 11724.833333333334,
+          "meanOut": 1310.6666666666667,
+          "meanCalls": 3.6666666666666665,
+          "meanSec": 20.526,
+          "costPerRun": 0.0035986725
+        },
+        {
+          "config": "cold",
+          "runs": 5,
+          "pass": 5,
+          "meanIn": 84361.8,
+          "medianIn": 82462,
+          "meanUncached": 11146.6,
+          "meanOut": 912.4,
+          "meanCalls": 2.8,
+          "meanSec": 14.835600000000001,
+          "costPerRun": 0.0031620020000000006
+        }
+      ],
+      "tasks": [
+        {
+          "task": "sspl-level",
+          "baseline": {
+            "medianIn": 92776,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 124708,
+            "medianCalls": 5,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 77255,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 76765,
+            "medianCalls": 2,
+            "pass": 1,
+            "runs": 1
+          }
+        },
+        {
+          "task": "dijkstra-relax",
+          "baseline": {
+            "medianIn": 68833,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 72505,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 50914,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 51146,
+            "medianCalls": 2,
+            "pass": 1,
+            "runs": 1
+          }
+        },
+        {
+          "task": "components-bfs",
+          "baseline": {
+            "medianIn": 97387,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 103245,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 105449,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 104947,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          }
+        },
+        {
+          "task": "triangles-selfloop",
+          "baseline": {
+            "medianIn": 124002,
+            "medianCalls": 5,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 78176,
+            "medianCalls": 5,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 216370,
+            "medianCalls": 7,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 82462,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          }
+        },
+        {
+          "task": "topo-generations",
+          "baseline": {
+            "medianIn": 118055,
+            "medianCalls": 5,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 127192,
+            "medianCalls": 5,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 51441,
+            "medianCalls": 2,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 106489,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          }
+        },
+        {
+          "task": "bellman-count",
+          "baseline": {
+            "medianIn": 161416,
+            "medianCalls": 7,
+            "pass": 1,
+            "runs": 1
+          },
+          "cbm": {
+            "medianIn": 111069,
+            "medianCalls": 4,
+            "pass": 1,
+            "runs": 1
+          },
+          "warm": {
+            "medianIn": 51891,
+            "medianCalls": 3,
+            "pass": 1,
+            "runs": 1
+          },
+          "cold": {
+            "medianIn": 0,
+            "medianCalls": 0,
+            "pass": 0,
+            "runs": 0
           }
         }
       ]
