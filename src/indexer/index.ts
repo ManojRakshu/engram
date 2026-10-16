@@ -270,7 +270,7 @@ async function resolveCalls(g: RepoGraph, changedPaths: string[], oldNames: stri
       const imported = cands.filter((d) => imp.has(d.path));
       const pick = local.length ? local : imported.length ? imported : cands.length <= 2 ? cands : [];
       const w = local.length || imported.length ? 1 : 0.5;
-      for (const d of pick.slice(0, 3)) rows.push({ a: c.id, b: d.id, w });
+      for (const d of pick.slice(0, local.length ? 8 : 3)) rows.push({ a: c.id, b: d.id, w });
     }
   }
 

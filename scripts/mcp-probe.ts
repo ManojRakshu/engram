@@ -1,0 +1,13 @@
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+const t = new StdioClientTransport({ command: "npx", args: ["tsx", "src/cli.ts", "mcp", "--root", process.argv[2]] });
+const c = new Client({ name: "probe", version: "0" });
+await c.connect(t);
+const tools = await c.listTools();
+console.log("tools:", tools.tools.map((x) => x.name).join(", "));
+console.log("tool-defs tokens ~", Math.ceil(JSON.stringify(tools.tools).length / 4));
+const r = await c.callTool({ name: "engram_why", arguments: { path: "src/click/core.py" } });
+console.log((r.content as any)[0].text.slice(0, 700));
+const f = await c.callTool({ name: "engram_find", arguments: { name: "type_cast_value" } });
+console.log((f.content as any)[0].text.slice(0, 500));
+await c.close();

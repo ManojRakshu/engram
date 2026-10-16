@@ -1,5 +1,6 @@
 import { FalkorDB, type Graph } from "falkordb";
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 
 export type Params = Record<string, unknown>;
 
