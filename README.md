@@ -5,7 +5,7 @@
 ### Your coding agents keep re-reading the same repo. Give them a memory.
 
 **A shared FalkorDB context graph for coding agents:** a ranked map of where to look before the first tool call,
-memory across sessions, and edit claims so parallel agents don't collide. **0 LLM tokens of its own. ~30 ms per prompt.**
+memory across sessions, and edit claims so parallel agents don't collide. **No LLM calls of its own. ~20–90 ms of graph queries per prompt.**
 
 | Same model, same bugs, Claude Code headless | Input tokens | Tool calls | Time | Bugs fixed |
 |---|---|---|---|---|
@@ -147,7 +147,7 @@ re-parsed. To remove it completely, run `engram forget` (drops the repo's graph)
   (packs, memory, claims, history) can be switched off in `engram.config.json` or with `ENGRAM_*` environment
   variables. `engram plugins` lists what's loaded.
 - **Lightweight by design.**
-  - No language servers: research shows LSP tools *add* 6–118% tokens for agents
+  - No language servers: a June 2026 study found LSP tools *added* 6–118% tokens on code-localization tasks
     ([arXiv 2608.13568](https://arxiv.org/abs/2608.13568)), and pyright or tsserver each want hundreds of MB.
   - Tree-sitter WASM runs on V8's baseline compiler (`--liftoff-only`): 6.5× less RAM (698 MB → 108 MB) when
     parsing a 128k-LOC repo.
