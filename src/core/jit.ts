@@ -112,3 +112,35 @@ export async function hintAfterTestFailure(g: RepoGraph, output: string, seen: S
   if (!rows.length) return;
   return `[engram] The failing test exercises: ${rows.map((r) => `${r.q} (${r.p}:${r.s})`).join(", ")}.`;
 }
+
+/**
+ * The cross-layer hint: one query joining all three graph layers on every edit —
+ *   history  (:File)-[:CO_CHANGES]-(:File)        files that historically change together
+ *   memory   (:Session)-[:EDITED]->(:File)         ...that this session has NOT touched yet
+ *   code     (:Symbol)-[:CALLS]->(:Symbol)         ...and which code there depends on the edit.
+ * "You changed types.py; it changes with core.py in 35 commits; you haven't touched core.py;
+ *  Option._pick_type there calls what you edited."
+ */
+export async function hintCoChangeGap(g: RepoGraph, sessionId: string | undefined, file: string, seen: Set<string>) {
+  const key = `cochange:${file}`;
+  if (seen.has(key) || !sessionId) return;
+  seen.add(key);
+  const rows = await g.read<{ other: string; count: number; weight: number; dependents: string[] }>(
+    "jit.cochangeGap",
+    `MATCH (f:File {path: $file})-[k:CO_CHANGES]-(o:File)
+     WHERE k.count >= 3 AND k.weight >= 0.3 AND NOT o.isTest AND NOT o.isAux
+     OPTIONAL MATCH (:Session {id: $sid})-[e:EDITED]->(o)
+     WITH f, o, k, e WHERE e IS NULL
+     OPTIONAL MATCH (o)-[:DEFINES]->(c:Symbol)-[:CALLS]->(:Symbol {path: $file})
+     WITH o, k, collect(DISTINCT c.qualname)[0..2] AS dependents
+     WHERE size(dependents) > 0 OR k.weight >= 0.5
+     RETURN o.path AS other, k.count AS count, k.weight AS weight, dependents
+     ORDER BY size(dependents) DESC, k.count DESC LIMIT 2`,
+    { file, sid: sessionId },
+  );
+  if (!rows.length) return;
+  const parts = rows.map(
+    (r) => `${r.other} (changed together in ${r.count} commits${r.dependents.length ? `; ${r.dependents.join(", ")} there call into ${file}` : ""})`,
+  );
+  return `[engram] Not touched yet this session but usually changed with ${file}: ${parts.join("; ")}.`;
+}

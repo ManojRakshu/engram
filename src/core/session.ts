@@ -15,7 +15,7 @@ import {
 import { buildPack, renderCompact, renderPack, type Pack } from "../pack.js";
 import { repoSlug } from "../repo.js";
 import { loadConfig, type EngramConfig } from "./config.js";
-import { hintAfterEdit, hintAfterRead, hintAfterSearch, hintAfterTestFailure, type FocusItem } from "./jit.js";
+import { hintAfterEdit, hintAfterRead, hintAfterSearch, hintAfterTestFailure, hintCoChangeGap, type FocusItem } from "./jit.js";
 
 /**
  * The harness-agnostic Engram lifecycle. Every integration (pi extension, Claude Code hooks,
@@ -151,9 +151,12 @@ export class EngramSession {
     if (this.config.memory && this.state.graphSession) await recordFileEvent(this.graph, this.state.graphSession, file, "EDITED");
     if (!this.config.jit) return;
     const seen = this.seen();
-    const hint = await hintAfterEdit(this.graph, this.root, file, newText, seen);
+    const [tests, gap] = await Promise.all([
+      hintAfterEdit(this.graph, this.root, file, newText, seen),
+      hintCoChangeGap(this.graph, this.state.graphSession, file, seen),
+    ]);
     this.remember(seen);
-    return hint;
+    return [tests, gap].filter(Boolean).join("\n") || undefined;
   }
 
   async afterSearch(pattern: string, resultText: string): Promise<string | undefined> {

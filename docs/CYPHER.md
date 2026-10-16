@@ -71,6 +71,24 @@ RETURN sd AS seed, s.qualname AS seedName, n.id AS id, hops, [x IN nodes(sp) | x
 LIMIT 60
 ```
 
+## The cross-layer query (src/core/jit.ts): why this needs a graph
+
+Fired after every edit (~11 ms). One query joins **history** (co-change), **live agent memory** (what this session
+has edited) and **code** (who calls the edited file), and returns files the agent probably also needs to change:
+```cypher
+MATCH (f:File {path: $file})-[k:CO_CHANGES]-(o:File)
+WHERE k.count >= 3 AND k.weight >= 0.3 AND NOT o.isTest AND NOT o.isAux
+OPTIONAL MATCH (:Session {id: $sid})-[e:EDITED]->(o)
+WITH f, o, k, e WHERE e IS NULL
+OPTIONAL MATCH (o)-[:DEFINES]->(c:Symbol)-[:CALLS]->(:Symbol {path: $file})
+WITH o, k, collect(DISTINCT c.qualname)[0..2] AS dependents
+WHERE size(dependents) > 0 OR k.weight >= 0.5
+RETURN o.path AS other, k.count AS count, dependents
+ORDER BY size(dependents) DESC, k.count DESC LIMIT 2
+```
+→ *"Not touched yet this session but usually changed with types.py: core.py (changed together in 35 commits;
+Parameter.consume_value there calls into types.py)."*
+
 ## Memory and coordination (src/memory.ts)
 
 **Atomic edit claim.** FalkorDB serialises writes per graph, so one query is a lock that two agents cannot both win:
