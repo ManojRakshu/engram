@@ -16,7 +16,7 @@ import { ingestGit } from "../src/git.ts";
 import { indexRepo } from "../src/indexer/index.ts";
 import { loadSuite, runTests, snapshotWorkspace, type Task } from "./tasks.ts";
 
-type Config = "baseline" | "cold" | "warm";
+type Config = "baseline" | "cold" | "warm" | "cbm";
 const argv = process.argv.slice(2);
 const flag = (k: string, d?: string) => (argv.includes(`--${k}`) ? argv[argv.indexOf(`--${k}`) + 1] : d);
 
@@ -36,6 +36,21 @@ mkdirSync("bench/results", { recursive: true });
 const out = `bench/results/claude-${stamp}.jsonl`;
 const workRoot = mkdtempSync(path.join(os.tmpdir(), "engram-cc-bench-"));
 const graphName = (c: Config) => `bench-${suite.repo.replace("/", "-")}-cc-${c}`;
+
+// Competitor setup: DeusData/codebase-memory-mcp, configured exactly as its own `install` command
+// writes it for Claude Code (captured into an isolated fake HOME, never touching the user's config).
+const CBM_HOME = process.env.CBM_HOME ?? path.join(os.homedir(), ".engram-cbm-fakehome");
+const CBM_BIN = path.join(CBM_HOME, ".local/bin/codebase-memory-mcp");
+const CBM_CACHE = path.join(workRoot, "cbm-cache");
+function setupCbm(dir: string, env: NodeJS.ProcessEnv) {
+  // Project-scoped copies of what the installer put in ~/.claude (hooks + subagents).
+  execSync(`mkdir -p .claude/agents && cp ${CBM_HOME}/.claude/settings.json .claude/settings.json && cp ${CBM_HOME}/.claude/agents/*.md .claude/agents/`, { cwd: dir });
+  const mcp = path.join(dir, ".claude", "cbm-mcp.json");
+  writeFileSync(mcp, JSON.stringify({ mcpServers: { "codebase-memory-mcp": { command: CBM_BIN, args: [], env: { CBM_CACHE_DIR: CBM_CACHE } } } }));
+  const t0 = Date.now();
+  execSync(`${CBM_BIN} cli index_repository --repo-path ${dir}`, { env: { ...env, CBM_CACHE_DIR: CBM_CACHE }, stdio: "ignore" }); // pre-index, outside measured time
+  return { mcp, indexMs: Date.now() - t0 };
+}
 
 const PROMPT = (t: Task) =>
   `Fix this bug in the repository.\n\nBug report: ${t.symptom}\n\nMake the smallest correct change to the library source. Do not modify or add tests. When you are done, reply with one line describing the fix.`;
@@ -62,7 +77,7 @@ interface ClaudeRun {
   timedOut?: boolean;
 }
 
-function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.ProcessEnv): Promise<ClaudeRun> {
+function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.ProcessEnv, mcpConfig?: string): Promise<ClaudeRun> {
   const args = [
     "-p", prompt,
     "--output-format", "stream-json", "--verbose",
@@ -74,6 +89,7 @@ function runClaude(cwd: string, prompt: string, config: Config, env: NodeJS.Proc
     "--disable-slash-commands",
   ];
   if (config === "baseline") args.push("--strict-mcp-config");
+  else if (config === "cbm") args.push("--strict-mcp-config", "--mcp-config", mcpConfig!);
   else args.push("--plugin-dir", pluginDir);
   return new Promise((resolve) => {
     const p = spawn("claude", args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], detached: true });
@@ -155,15 +171,20 @@ async function runOne(config: Config, t: Task, rep: number) {
     ENGRAM_HOOK_LOG: path.resolve(`bench/results/hooks-${stamp}.jsonl`),
   };
   if (config === "cold") await wipeMemory(await RepoGraph.open(graphName(config)));
-  const r = await runClaude(dir, PROMPT(t), config, env);
+  let cbm: { mcp: string; indexMs: number } | undefined;
+  if (config === "cbm") {
+    env.CBM_CACHE_DIR = CBM_CACHE;
+    cbm = setupCbm(dir, env);
+  }
+  const r = await runClaude(dir, PROMPT(t), config, env, cbm?.mcp);
   const tests = runTests(dir, suite, env);
-  if (config !== "baseline") {
+  if (config === "cold" || config === "warm") {
     const g = await RepoGraph.open(graphName(config));
     await g.write("bench.outcome", "MATCH (:Agent {id: $a})-[:RAN]->(s:Session) SET s.outcome = $o", { a: env.ENGRAM_AGENT, o: tests.pass ? "success" : "failure" });
   }
   dropWorkspace(dir);
   const totalIn = r.usage.input + r.usage.cacheRead + r.usage.cacheWrite;
-  const row = { harness: "claude-code", model, config, task: t.id, rep, timedOut: !!r.timedOut, pass: tests.pass && !r.timedOut, tokens: { ...r.usage, totalIn }, cost: r.cost, turns: r.turns, toolCalls: r.toolCalls, tools: r.tools, wallMs: r.durationMs, error: r.error ?? "", answer: r.result };
+  const row = { harness: "claude-code", model, config, task: t.id, rep, timedOut: !!r.timedOut, pass: tests.pass && !r.timedOut, tokens: { ...r.usage, totalIn }, cost: r.cost, turns: r.turns, toolCalls: r.toolCalls, tools: r.tools, wallMs: r.durationMs, indexMs: cbm?.indexMs, error: r.error ?? "", answer: r.result };
   appendFileSync(out, JSON.stringify(row) + "\n");
   console.log(`${config.padEnd(8)} ${t.id.padEnd(15)} r${rep} ${tests.pass ? "PASS" : "fail"} in=${totalIn} (uncached ${r.usage.input + r.usage.cacheWrite}) out=${r.usage.output} calls=${r.toolCalls} ${(r.durationMs / 1000).toFixed(0)}s $${r.cost.toFixed(4)} ${r.error ?? ""}`);
   return row;
@@ -174,7 +195,7 @@ async function main() {
   // Graph layers (code + history) built once per config from the clean source.
   const clean = path.join(workRoot, "clean");
   execSync(`git worktree add -q --detach ${clean} ${suite.sha}`, { cwd: source }); // full history for the history layer
-  for (const c of configs.filter((c) => c !== "baseline")) {
+  for (const c of configs.filter((c) => c === "cold" || c === "warm")) {
     const g = await RepoGraph.open(graphName(c));
     await g.drop();
     const s = await indexRepo(g, clean);
