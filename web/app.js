@@ -161,8 +161,8 @@ async function loadWhy(p) {
 async function loadBench() {
   const [b, lat] = await Promise.all([api("bench"), api("latency")]);
   const pct = (a, base) => `${Math.round((1 - a / base) * 100)}%`;
-  const color = { baseline: css("--muted"), cold: css("--blue"), warm: css("--accent") };
-  const label = { baseline: "Claude Code", cold: "+ Engram (cold)", warm: "+ Engram (warm memory)" };
+  const color = { baseline: css("--muted"), cbm: css("--amber"), cold: css("--blue"), warm: css("--accent") };
+  const label = { baseline: "Claude Code", cbm: "+ codebase-memory-mcp (47k★)", cold: "+ Engram (cold)", warm: "+ Engram (warm memory)" };
   let html = "";
   for (const s of b.suites ?? []) {
     const base = s.agg.find((a) => a.config === "baseline");
@@ -204,7 +204,10 @@ const loaders = {
 
 // ---------- boot ----------
 const repos = await api("repos");
-$("#repo").innerHTML = repos.map((r) => `<option ${/click/.test(r) && !/bench/.test(r) ? "selected" : ""}>${esc(r)}</option>`).join("");
+const wanted = new URLSearchParams(location.search).get("repo");
+$("#repo").innerHTML = repos.map((r) => `<option ${(wanted ? r === wanted : /click/.test(r) && !/bench/.test(r)) ? "selected" : ""}>${esc(r)}</option>`).join("");
+const presetTask = new URLSearchParams(location.search).get("task");
+if (presetTask) $("#task").value = presetTask;
 repo = $("#repo").value;
 $("#repo").onchange = () => {
   repo = $("#repo").value;

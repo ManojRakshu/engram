@@ -7,7 +7,11 @@
 **A shared FalkorDB context graph for coding agents:** a ranked map of where to look before the first tool call,
 memory across sessions, and edit claims so parallel agents don't collide. **0 LLM tokens of its own. ~30 ms per prompt.**
 
-<!-- RESULTS_HEADLINE -->
+| Same model, same bugs, Claude Code headless | Input tokens | Tool calls | Time | Bugs fixed |
+|---|---|---|---|---|
+| **pallets/click** (12 bugs × 3 runs) + Engram | **−25%** | **−29%** | **−23%** | 35/36 (baseline 36/36) |
+| **networkx**, 128k LOC (6 bugs × 1 run) + Engram | **−24%** | **−40%** | **−36%** | 5/5 (baseline 6/6) |
+| *For comparison:* + codebase-memory-mcp (47k★), click | −8% | −7% | −18% | 36/36 |
 
 [Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in 60 seconds](#install-in-60-seconds) · [How it works](#how-it-works) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
 
@@ -33,7 +37,7 @@ at four points:
 |---|---|---|
 | **Before the first tool call** | A ~200-token map: the 3–6 most likely `file:lines` locations, the tests that reach them, the verify command that worked last time | idf-weighted name and body matching, delegation-chain traversal, PageRank prior, episodic recall |
 | **Before every edit** | A block if another agent holds the file (Claude Code, pi and MCP agents share one claim system) | atomic claim in a single Cypher write |
-| **After every read, edit or command** | The graph re-indexes the changed file (tens of ms) and records what was used | incremental index, feedback edges |
+| **After every read, edit or command** | Just-in-time hints: the tests that exercise what was just edited, the files that usually change *with* it but haven't been touched yet, the definition of what was just grepped. Meanwhile the graph re-indexes the changed file | incremental index, one cross-layer query (co-change × this session's edits × call graph) |
 | **On demand** (tools) | `find` (definition + callers), `impact` (blast radius + tests), `why` (history, experts, lessons) | variable-length traversals |
 
 Engram **never calls an LLM**. It is pure graph retrieval, so it adds no tokens of its own beyond the map it injects,
@@ -41,7 +45,44 @@ and it works with any model your agent uses.
 
 ## Benchmark: Claude Code, same model, same tasks
 
-<!-- RESULTS_TABLE -->
+**pallets/click: 12 injected bugs × 3 repeats × 4 setups = 144 runs** (claude-haiku-5-5, same time window)
+
+| Setup | Fixed | Mean input tokens | Median input tokens | Tool calls | Search (Bash) calls | Time | $ per fixed bug |
+|---|---|---|---|---|---|---|---|
+| Claude Code | 36/36 | 137,600 | 114,704 | 5.1 | 3.4 | 16.4 s | $0.0036 |
+| + codebase-memory-mcp (47k★) | 36/36 | 126,912 | 121,922 | 4.7 | 2.8 | 13.4 s | $0.0035 |
+| **+ Engram (cold)** | 35/36 | **103,467** | **96,129** | **3.6** | **1.7** | **12.7 s** | **$0.0034** |
+| **+ Engram (warm memory)** | 35/36 | 104,347 | 98,656 | 3.8 | 1.8 | 13.2 s | $0.0034 |
+
+Per task (geometric mean vs Claude Code): Engram cold **−22%** tokens, cheaper on **11/12** bugs; Engram warm −13%, 10/12;
+codebase-memory-mcp +1%, 3/12.
+
+**networkx (128k LOC): 6 bugs × 1 repeat × 4 setups** (the run was cut short by the account's usage limit; only the
+complete first repeat is reported, raw data for all attempts is kept)
+
+| Setup | Fixed | Mean input tokens | Tool calls | Time |
+|---|---|---|---|---|
+| Claude Code | 6/6 | 110,412 | 4.7 | 23.0 s |
+| + codebase-memory-mcp | 6/6 | 102,816 | 4.3 | 19.7 s |
+| **+ Engram (cold)** | 5/5* | **84,362** | **2.8** | **14.8 s** |
+| **+ Engram (warm memory)** | 6/6 | 92,220 | 3.7 | 20.5 s |
+
+\* one cold run was not executed (usage limit), so it is not counted as a pass or a failure.
+
+**Engram's own overhead** (measured in every run): the prompt hook takes 149 ms p50 and injects ~221 tokens; the tool
+hooks take ~50 ms p50 and inject ~14 tokens on average. These are included in all the numbers above.
+
+**What Engram removes is searching:** Bash grep/find/cat calls drop from 3.4 to 1.7 per bug on click. The floor for a
+fix is about 3 calls (read, edit, test); Engram averages 3.6.
+
+**Honest notes:**
+- Engram missed one fix in 36 on click (cold and warm, 35/36 each).
+- The codebase-memory-mcp setup is exactly what its installer configures (MCP + hooks + subagents), scoped to each
+  benchmark workspace; skills are disabled for *all* setups so user-level skills can't leak in.
+- The cross-layer "usually changed together but not touched yet" hint was added after these runs, so it is not
+  reflected in the numbers above.
+- An earlier version of our harness let agents read the injected bug through `git diff`. We caught it and rebuilt the
+  harness, and those runs are discarded.
 
 **How it's measured** (the full harness is in [`bench/`](bench/)):
 - Real bugs are injected into real projects: `pallets/click` (12 bugs) and `networkx` (6 bugs, ~128k LOC). Each
@@ -53,7 +94,14 @@ and it works with any model your agent uses.
 - Same model and same harness (`claude -p`, headless); the only difference is the Engram plugin.
 - Errored runs are excluded and reported. Raw JSONL per run is in `bench/results/`.
 
-**Retrieval alone, with zero LLM tokens:** <!-- RESULTS_RETRIEVAL -->
+**Retrieval alone, with zero LLM tokens** (`bench/retrieval.ts`): the buggy function is in the injected map's top 10
+for 8/12 click bugs and **6/6 networkx bugs**; the buggy *file* is in the top 3 for 10/12 and **6/6**. A pack takes
+~20 ms on click and ~90 ms on networkx.
+
+**Why this matters, from real usage:** across 83 of the author's own Claude Code sessions (32,713 tool calls), **31% of
+all tool calls were the agent searching or navigating** (grep, sed, cat, find). Only 9% were edits. There was a
+median of **24 search calls before the first edit**, and 44% of file views re-read a file already seen in that
+session.
 
 ## Install in 60 seconds
 

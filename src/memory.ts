@@ -97,7 +97,8 @@ export async function addLesson(g: RepoGraph, sessionId: string | undefined, tex
 const VERIFY_CMD = /\b(pytest|python -m pytest|tox|nox|npm (run )?test|pnpm test|yarn test|vitest|jest|go test|cargo test|make test|ruff|mypy|tsc|eslint)\b/;
 
 export function isVerifyCommand(cmd: string) {
-  return VERIFY_CMD.test(cmd);
+  // Ignore quoted code (python -c "...", node -e '...') so snippets aren't mistaken for test runs.
+  return VERIFY_CMD.test(cmd.replace(/"[^"]*"|'[^']*'/g, ""));
 }
 
 /** Normalise "cd x && pytest tests/test_a.py::test_b -q" to its reusable shape: "pytest tests/test_a.py -q". */
