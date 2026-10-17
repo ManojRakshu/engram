@@ -13,7 +13,7 @@ memory across sessions, and edit claims so parallel agents don't collide. **No L
 | **networkx**, 128k LOC (6 bugs × 1 run) + Engram | **−24%** | **−40%** | **−36%** | 5/5 (baseline 6/6) |
 | *For comparison:* + codebase-memory-mcp (47k★), click | −8% | −7% | −18% | 36/36 |
 
-[Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in one command](#install-in-one-command) · [How it works](#how-it-works) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
+[Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in one command](#install-in-one-command) · [How it works](#how-it-works) · [Comparison](docs/COMPARISON.md) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
 
 </div>
 
@@ -54,7 +54,7 @@ and it works with any model your agent uses.
 | **+ Engram (cold)** | 35/36 | **103,467** | **96,129** | **3.6** | **1.7** | **12.7 s** | **$0.0034** |
 | **+ Engram (warm memory)** | 35/36 | 104,347 | 98,656 | 3.8 | 1.8 | 13.2 s | $0.0034 |
 
-Per task (geometric mean vs Claude Code): Engram cold **−22%** tokens, cheaper on **11/12** bugs; Engram warm −13%, 10/12;
+Per task (geometric mean vs Claude Code): Engram cold **−22%** tokens, fewer tokens on **11/12** bugs; Engram warm −13%, 10/12;
 codebase-memory-mcp +1%, 3/12.
 
 **networkx (128k LOC): 6 bugs × 1 repeat × 4 setups** (the run was cut short by the account's usage limit; only the
