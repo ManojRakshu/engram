@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync, readlinkSync, realpathSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { ensureFalkor, FalkorUnavailable, ping, save } from "./falkor.js";
@@ -50,6 +50,7 @@ function jsonServers(file: string, key: string, entry: unknown, remove: boolean)
     if (JSON.stringify(map.engram) === JSON.stringify(entry)) return "already configured";
     map.engram = entry;
   }
+  mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");
   return remove ? `removed from ${file}` : `added to ${file}`;
 }
@@ -130,6 +131,13 @@ export async function setup(flags: Map<string, string>, repoRoot: string, indexH
     ["Windsurf", existsSync(path.join(h, ".codeium", "windsurf")), () => jsonServers(path.join(h, ".codeium", "windsurf", "mcp_config.json"), "mcpServers", mcp, remove)],
     ["opencode", existsSync(path.join(h, ".config", "opencode")), () => jsonServers(path.join(h, ".config", "opencode", "opencode.json"), "mcp", { type: "local", command: [bin, "mcp"], enabled: true }, remove)],
   ];
+  const vscodeUser = process.platform === "darwin" ? path.join(h, "Library", "Application Support", "Code", "User") : path.join(h, ".config", "Code", "User");
+  const cline = path.join(vscodeUser, "globalStorage", "saoudrizwan.claude-dev", "settings");
+  agents.push(
+    ["VS Code", existsSync(vscodeUser), () => jsonServers(path.join(vscodeUser, "mcp.json"), "servers", { type: "stdio", ...mcp }, remove)],
+    ["Cline", existsSync(cline), () => jsonServers(path.join(cline, "cline_mcp_settings.json"), "mcpServers", mcp, remove)],
+    ["Kiro", existsSync(path.join(h, ".kiro")), () => jsonServers(path.join(h, ".kiro", "settings", "mcp.json"), "mcpServers", mcp, remove)],
+  );
   const only = flags.get("agents")?.toLowerCase().split(",");
   let found = 0;
   for (const [name, present, connect] of agents) {

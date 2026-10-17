@@ -1,7 +1,9 @@
 #!/bin/sh
 # Engram launcher: self-contained bundle + wasm grammars. Needs nothing preinstalled: it uses your Node.js 22+
 # if there is one, otherwise it fetches the official Node.js build once (checksum-verified) into ~/.engram.
-DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SELF="$0" # follow the ~/.local/bin/engram link back to the checkout
+while [ -L "$SELF" ]; do L="$(readlink "$SELF")"; case "$L" in /*) SELF="$L" ;; *) SELF="$(dirname "$SELF")/$L" ;; esac; done
+DIR="$(cd "$(dirname "$SELF")/.." && pwd)"
 export ENGRAM_WASM_DIR="$DIR/dist"
 NODE_VER=v22.23.1
 EH="${ENGRAM_HOME:-$HOME/.engram}"

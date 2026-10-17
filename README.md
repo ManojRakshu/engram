@@ -105,58 +105,64 @@ session.
 
 ## Install in one command
 
-You need **Node 22+** and **Docker** (or any FalkorDB URL). No API keys: Engram makes no LLM calls.
+Nothing to install first: no Docker, no database server, no Node.js, no API keys.
 
 ```bash
-git clone https://github.com/<owner>/engram ~/engram && ~/engram/plugin/bin/engram setup
+curl -fsSL https://raw.githubusercontent.com/<owner>/engram/main/install.sh | sh
 ```
 
-`setup` does three things, prints every file it touches, and is safe to re-run:
+Run it inside a repo. Real output from a fresh user profile whose PATH had only the system directories (no Node, Docker or Homebrew), with paths shortened:
 
 ```
+engram: fetching Node.js v22.23.1 (one time)…
 FalkorDB
-  · creating Docker container engram-falkordb (falkordb/falkordb:v4.22.1) on localhost:6390, data in volume engram-falkordb-data…
-  ✓ running at falkor://localhost:6390
-  ✓ FalkorDB Browser: http://localhost:3010
+  · downloading FalkorDB (FalkorDBLite 0.10.0, one time)…
+  · starting embedded FalkorDB…
+  ✓ running (embedded, ~/.engram/falkordb.sock)
 Agents
-  ✓ Claude Code: plugin installed (hooks + MCP tools); restart Claude Code
   ✓ Cursor: added to ~/.cursor/mcp.json
-  ✓ Codex: added to ~/.codex/config.toml
+  ✓ `engram` command: ~/.local/bin/engram
 This repo
-  ✓ indexed pallets-click: 91 files, 669 commits in 0.7 s
+  ✓ indexed networkx-networkx: 695 files, 1175 commits in 4.4 s
 ```
 
-1. **FalkorDB.** Engram always runs on FalkorDB; `setup` only decides which one. It uses `FALKORDB_URL` if set,
-   otherwise it runs one in Docker, bound to localhost, with a persistent volume. All agents on the machine share
-   that one instance, so they share one memory and one set of edit claims. After a reboot, Engram restarts the
-   container on its own when an agent next needs it.
-   **FalkorDB Cloud or your own server:** `engram setup --url falkor://user:pass@host:port`. A team that points at
-   one instance shares lessons, verify commands and claims.
-2. **Agents.** It connects every agent it finds: Claude Code (the plugin, with hooks and MCP tools), and Cursor,
-   Codex, Gemini CLI, Windsurf and opencode (as an MCP server). `--agents cursor,codex` limits it to those.
-3. **This repo.** It indexes the repo you run it in. Any other repo is indexed on its first prompt (click: ~1 s,
-   128k-line networkx: ~5 s), then updated incrementally after every edit.
+25 s in total, most of it the two one-time downloads. With Node.js already installed, it takes about 4 s.
 
-**If FalkorDB is not reachable,** your agent keeps working as usual. Engram stays out of the way and Claude Code
-shows one line saying why.
+**How it stays dependency-free:**
+- **FalkorDB is embedded.** Engram runs [FalkorDBLite](https://docs.falkordb.com/operations/falkordblite/), FalkorDB's
+  own embedded build (FalkorDB v4.18.3). The download is pinned and checked against its sha256, about 18 MB on macOS.
+  It runs as one small server per user on an owner-only Unix socket in `~/.engram`, using 38–64 MB of RAM with
+  click and networkx loaded. Every agent on the machine shares it, so they share one memory and one set of edit claims.
+  It starts on demand (a cold start costs about 50 ms) and saves to disk.
+- **Node.js is optional.** The launcher uses your Node 22+, or fetches the official build once, checksum-verified.
+- **Your agent never waits on it.** If FalkorDB isn't up yet, the agent works as usual and Engram switches on at the next prompt.
 
-**Other agents.** Any MCP client: `{ "mcpServers": { "engram": { "command": "~/engram/plugin/bin/engram", "args": ["mcp"] } } }`
-(with the absolute path). Any CLI agent that takes a prompt:
-`~/engram/plugin/bin/engram run "fix the flaky retry" -- codex exec {prompt}`.
-pi: `cd ~/engram && npm install && pi --extension ~/engram/pi/engram.ts`.
+**Agents it connects** (whichever are installed): Claude Code (a plugin with hooks and MCP tools), Cursor, Codex,
+Gemini CLI, Windsurf, opencode, VS Code, Cline and Kiro (as an MCP server). It prints every file it touches and is
+safe to re-run. Limit it with `| sh -s -- --agents cursor,codex`. MCP servers find the repo from the client's
+workspace roots, so editors that start servers outside the repo still work.
+
+**Other agents.** Any MCP client: `{ "mcpServers": { "engram": { "command": "~/.engram/app/plugin/bin/engram", "args": ["mcp"] } } }`
+(with the absolute path). Any CLI agent that takes a prompt: `engram run "fix the flaky retry" -- codex exec {prompt}`.
+
+**A shared or hosted FalkorDB** (a team-wide memory, or FalkorDB Cloud): `engram setup --url falkor://user:pass@host:port`,
+or set `FALKORDB_URL`.
+
+**Platforms.** Embedded FalkorDB covers macOS on Apple silicon and Linux x64/arm64 with glibc 2.39+ (Ubuntu 24.04+,
+and WSL2 on Windows). On other systems, Engram runs FalkorDB in Docker if it's available, or you pass `--url`.
 
 **Try it from a terminal:**
 ```bash
 cd your-repo
-~/engram/plugin/bin/engram pack --compact "describe a bug"   # the map an agent would get
-~/engram/plugin/bin/engram impact src/some/file.py           # blast radius
+engram pack --compact "describe a bug"     # the map an agent would get
+engram impact src/some/file.py             # blast radius
 ```
 
 **Configuration.** Each feature can be switched off in `engram.config.json` or with `ENGRAM_PACK`, `ENGRAM_JIT`,
 `ENGRAM_MEMORY`, `ENGRAM_CLAIMS` or `ENGRAM_HISTORY` set to `0`.
 
-**Uninstall:** `engram setup --remove` disconnects every agent. `engram forget` in a repo drops its graph, and
-`docker rm -f engram-falkordb` removes FalkorDB. Nothing else is written outside `~/.engram/config.json`.
+**Uninstall:** `engram setup --remove` disconnects every agent, and `engram db stop` stops FalkorDB. Delete
+`~/.engram` to remove everything, including the graphs. Engram writes nothing else.
 
 ## How it works
 
@@ -233,12 +239,11 @@ The dashboard shows:
 
 ```bash
 npm install
-docker compose up -d                       # FalkorDB on :6390, Browser on :3010
-cp .env.example .env
-npx tsx src/cli.ts index --root /path/to/repo
+npx tsx src/cli.ts index --root /path/to/repo     # starts embedded FalkorDB on first use
 npx tsx src/cli.ts pack --compact --root /path/to/repo "describe a bug"
 ENGRAM_REPOS="owner-repo=/path/to/repo" npx tsx src/server.ts   # dashboard on :8787
 ```
+Optional, for the FalkorDB Browser on :3010: `docker compose up -d` and `export FALKORDB_URL=falkor://localhost:6390`.
 
 Reproduce the benchmark (uses your Claude Code login, headless):
 ```bash

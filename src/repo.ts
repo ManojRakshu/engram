@@ -14,3 +14,12 @@ export function repoSlug(root: string) {
   }
   return path.basename(root).toLowerCase();
 }
+
+/** The git work tree containing `dir`, if any. */
+export function gitRoot(dir: string) {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: dir, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return undefined;
+  }
+}
