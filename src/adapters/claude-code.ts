@@ -90,7 +90,7 @@ export async function runClaudeCodeHook() {
     if (!(e instanceof FalkorUnavailable)) throw e;
     // Fail open: the agent works as usual. Tell the user once per session (systemMessage costs no model tokens).
     if (input.hook_event_name === "UserPromptSubmit" && !persisted.warned) {
-      process.stdout.write(JSON.stringify({ systemMessage: `Engram is off for now: ${e.message}` }));
+      process.stdout.write(JSON.stringify({ systemMessage: `[engram] ${e.message}` }));
       save(input.session_id, { ...persisted, warned: true });
     }
     return;

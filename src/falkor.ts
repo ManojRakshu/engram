@@ -1,15 +1,16 @@
 import { execFile, spawn } from "node:child_process";
 import { mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import net from "node:net";
-import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { binariesReady, embeddedBuild, engramHome, installBinaries, spawnServer, tryLock } from "./embedded.js";
 
 /**
  * Where FalkorDB lives, with zero setup. Engram always runs on FalkorDB; this only decides *which* one:
  *   1. FALKORDB_URL (your own server or FalkorDB Cloud)
- *   2. the URL saved by `engram setup` in ~/.engram/config.json
- *   3. a local Docker container, `engram-falkordb`, started (or created) on demand.
+ *   2. the URL saved in ~/.engram/config.json (by `engram setup --url`, or the last server Engram started)
+ *   3. embedded FalkorDB (FalkorDBLite): one small per-user server on a Unix socket. No Docker, nothing to install.
+ *   4. a local Docker container, `engram-falkordb`, on platforms without an embedded build.
  * Every agent on the machine shares the same instance, so they share one memory and one set of edit claims.
  */
 const run = promisify(execFile);
@@ -17,7 +18,7 @@ export const CONTAINER = process.env.ENGRAM_CONTAINER ?? "engram-falkordb";
 export const IMAGE = "falkordb/falkordb:v4.22.1";
 export const VOLUME = `${CONTAINER}-data`;
 
-const home = () => process.env.ENGRAM_HOME ?? path.join(os.homedir(), ".engram");
+const home = engramHome;
 const configFile = () => path.join(home(), "config.json");
 
 interface Saved {
@@ -33,7 +34,7 @@ export function saved(): Saved {
 }
 export function save(s: Saved) {
   mkdirSync(home(), { recursive: true });
-  writeFileSync(configFile(), JSON.stringify({ ...saved(), ...s }, null, 2) + "\n");
+  writeFileSync(configFile(), JSON.stringify({ ...saved(), ...s }, null, 2) + "\n", { mode: 0o600 });
 }
 
 /**
@@ -47,11 +48,11 @@ export function ping(url: string, timeoutMs = 1500): Promise<"ok" | "not-falkord
   } catch {
     return Promise.resolve("down");
   }
-  if (!/^(falkor|redis):$/.test(u.protocol)) return Promise.resolve("ok"); // TLS etc.: let the client decide
+  if (!/^(falkor|redis|unix):$/.test(u.protocol)) return Promise.resolve("ok"); // TLS etc.: let the client decide
   const cmd = (...a: string[]) => `*${a.length}\r\n` + a.map((x) => `$${Buffer.byteLength(x)}\r\n${x}\r\n`).join("");
   const auth = u.password ? cmd("AUTH", decodeURIComponent(u.username || "default"), decodeURIComponent(u.password)) : "";
   return new Promise((resolve) => {
-    const s = net.connect({ host: u.hostname || "localhost", port: Number(u.port || 6379) });
+    const s = u.protocol === "unix:" ? net.connect({ path: u.pathname }) : net.connect({ host: u.hostname || "localhost", port: Number(u.port || 6379) });
     let buf = "";
     const done = (r: "ok" | "not-falkordb" | "down") => {
       s.destroy();
@@ -120,12 +121,55 @@ async function freePort(from: number) {
 
 export class FalkorUnavailable extends Error {}
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Start the per-user embedded server if it isn't up. The one-time download (~18 MB on macOS) runs in the
+ * foreground for `engram setup`; from a hook it runs detached, so the agent is never kept waiting.
+ */
+async function ensureEmbedded(waitMs: number, foreground: boolean, log: (s: string) => void): Promise<string> {
+  if (!binariesReady()) {
+    if (!foreground) {
+      spawn(process.execPath, [...process.execArgv, process.argv[1], "db", "start"], { detached: true, stdio: "ignore", env: process.env }).unref();
+      throw new FalkorUnavailable("Engram is downloading FalkorDB (one time, a few seconds). It switches on with your next prompt.");
+    }
+    await installBinaries(log);
+  }
+  const until = Date.now() + Math.max(waitMs, 10_000);
+  while (Date.now() < until) {
+    const release = tryLock();
+    if (release) {
+      try {
+        const cur = saved().url; // someone may have finished starting it just before we took the lock
+        if (cur && (await ping(cur, 500)) === "ok") return cur;
+        log("starting embedded FalkorDB…");
+        const url = spawnServer();
+        while (Date.now() < until) {
+          if ((await ping(url, 500)) === "ok") {
+            save({ url });
+            return url;
+          }
+          await sleep(50);
+        }
+      } finally {
+        release();
+      }
+      break;
+    }
+    // Another process is starting it: wait for the URL it saves.
+    await sleep(100);
+    const cur = saved().url;
+    if (cur && (await ping(cur, 500)) === "ok") return cur;
+  }
+  throw new FalkorUnavailable("embedded FalkorDB did not start; see ~/.engram/falkordb.log");
+}
+
 /**
  * Resolve a reachable FalkorDB URL, starting or creating the local container when needed.
  * `waitMs` bounds how long we wait for a first image pull: hooks pass a few seconds and the pull
  * carries on in the background; `engram setup` waits for it.
  */
-export async function ensureFalkor(opts: { waitMs?: number; log?: (s: string) => void } = {}): Promise<string> {
+export async function ensureFalkor(opts: { waitMs?: number; foreground?: boolean; log?: (s: string) => void } = {}): Promise<string> {
   const log = opts.log ?? (() => {});
   const waitMs = opts.waitMs ?? 8000;
   const explicit = process.env.FALKORDB_URL;
@@ -141,6 +185,14 @@ export async function ensureFalkor(opts: { waitMs?: number; log?: (s: string) =>
   const url = saved().url;
   if (url && (await ping(url)) === "ok") return url;
 
+  if (embeddedBuild() && process.env.ENGRAM_DOCKER !== "1") {
+    try {
+      return await ensureEmbedded(opts.waitMs ?? 8000, opts.foreground ?? false, log);
+    } catch (e) {
+      if (e instanceof FalkorUnavailable) throw e;
+      log(`embedded FalkorDB unavailable (${(e as Error).message}); trying Docker`);
+    }
+  }
   if (!(await hasDocker()))
     throw new FalkorUnavailable(
       "Engram needs FalkorDB. Start Docker (Engram then runs FalkorDB for you), or use FalkorDB Cloud: engram setup --url falkor://user:pass@host:port",

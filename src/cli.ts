@@ -29,6 +29,11 @@ const root = path.resolve(flags.get("root") ?? process.cwd());
 const repo = flags.get("repo") ?? repoSlug(root);
 
 async function main() {
+  if (Number(process.versions.node.split(".")[0]) < 22) {
+    console.error(`engram needs Node.js 22+ (found ${process.version}); set ENGRAM_NODE to a newer node, or remove node from PATH and Engram fetches one`);
+    process.exitCode = 1;
+    return;
+  }
   // Adapters load lazily so a hook process only pays for what it uses.
   if (cmd === "mcp") return (await import("./adapters/mcp.js")).serveMcp(flags.get("root"));
   if (cmd === "hook") return (await import("./adapters/claude-code.js")).runClaudeCodeHook();
@@ -36,6 +41,16 @@ async function main() {
     const sep = process.argv.indexOf("--");
     const task = process.argv.slice(3, sep < 0 ? undefined : sep).join(" ");
     return (await import("./adapters/wrap.js")).runWrapped(task, sep < 0 ? [] : process.argv.slice(sep + 1));
+  }
+  if (cmd === "db") {
+    const { ensureFalkor, saved } = await import("./falkor.js");
+    const { stopServer } = await import("./embedded.js");
+    if (args[0] === "stop") {
+      const pid = stopServer();
+      return console.log(pid ? `stopped embedded FalkorDB (pid ${pid}); the graph is saved` : "embedded FalkorDB is not running");
+    }
+    const url = await ensureFalkor({ foreground: true, waitMs: 180_000, log: (m) => console.log(m) });
+    return console.log(`FalkorDB is up: ${url.replace(/:[^:@/]+@/, ":***@")}${saved().url === url ? "" : " (FALKORDB_URL)"}`);
   }
   if (cmd === "setup")
     return (await import("./setup.js")).setup(flags, root, async () => {
@@ -88,6 +103,7 @@ async function main() {
     default:
       console.log(`engram <command> [--root dir] [--repo slug]
   setup [--url falkor://…] [--agents a,b] [--remove]   start FalkorDB, connect your agents, index this repo
+  db [start|stop]                              the shared FalkorDB (embedded; starts on demand)
   index [--fresh] [--no-git] [--commits N]   build/refresh the graph for a repo
   pack "<task>" [--budget tokens]              the context pack an agent would get
   find <name>                                  definition + callers/callees

@@ -35,7 +35,7 @@ export async function connect(): Promise<FalkorDB> {
   if (client) return client;
   // ensureFalkor: FALKORDB_URL, else the saved URL, else start (or create) the local container.
   connecting ??= ensureFalkor()
-    .then((url) => FalkorDB.connect({ url }))
+    .then((url) => FalkorDB.connect(url.startsWith("unix://") ? { socket: { path: url.slice("unix://".length) } } : { url }))
     .then((c) => (client = c));
   connecting.catch(() => (connecting = undefined));
   return connecting;

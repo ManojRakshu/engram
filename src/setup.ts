@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readlinkSync, realpathSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { CONTAINER, ensureFalkor, FalkorUnavailable, ping, save, saved } from "./falkor.js";
+import { ensureFalkor, FalkorUnavailable, ping, save } from "./falkor.js";
 
 /**
  * `engram setup`: one command from clone to working.
@@ -108,9 +108,9 @@ export async function setup(flags: Map<string, string>, repoRoot: string, indexH
       ok(`using ${url} (saved in ~/.engram/config.json)`);
     } else {
       try {
-        const u = await ensureFalkor({ waitMs: 180_000, log: skip });
-        ok(`running at ${u}${process.env.FALKORDB_URL ? " (FALKORDB_URL)" : ""}`);
-        if (saved().browser && !process.env.FALKORDB_URL) ok(`FalkorDB Browser: ${saved().browser}`);
+        const u = await ensureFalkor({ foreground: true, waitMs: 180_000, log: skip });
+        const where = u.startsWith("unix://") ? `embedded, ${u.slice(7).replace(os.homedir(), "~")}` : u.replace(/:[^:@/]+@/, ":***@");
+        ok(`running (${where})${process.env.FALKORDB_URL ? " from FALKORDB_URL" : ""}`);
       } catch (e) {
         if (!(e instanceof FalkorUnavailable)) throw e;
         warn(e.message);
@@ -144,8 +144,27 @@ export async function setup(flags: Map<string, string>, repoRoot: string, indexH
     skip(`any CLI agent: ${bin} run "<task>" -- <agent> {prompt}`);
   }
 
+  // An `engram` command, when a per-user bin directory is already on PATH. Only ever replaces our own link.
+  const onPathDir = [path.join(h, ".local", "bin"), path.join(h, "bin")].find((d) => existsSync(d) && (process.env.PATH ?? "").split(path.delimiter).includes(d));
+  if (onPathDir) {
+    const link = path.join(onPathDir, "engram");
+    const ours = (() => {
+      try {
+        return lstatSync(link).isSymbolicLink() && readlinkSync(link).endsWith(path.join("plugin", "bin", "engram"));
+      } catch {
+        return undefined; // no such file
+      }
+    })();
+    if (remove && ours) unlinkSync(link), ok(`removed ${link}`);
+    if (!remove && ours !== false) {
+      if (ours) unlinkSync(link);
+      symlinkSync(bin, link);
+      ok(`\`engram\` command: ${link}`);
+    }
+  }
+
   if (remove) {
-    console.log(`Graphs are kept. Drop one with \`engram forget\` in its repo; stop FalkorDB with \`docker rm -f engram-falkordb\`.`);
+    console.log("Graphs are kept. Drop one with `engram forget` in its repo, stop FalkorDB with `engram db stop`, and delete ~/.engram to remove everything.");
     return;
   }
   if (!flags.has("no-index") && existsSync(path.join(repoRoot, ".git"))) {

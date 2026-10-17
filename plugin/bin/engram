@@ -1,5 +1,32 @@
 #!/bin/sh
-# Engram launcher for the Claude Code plugin: self-contained bundle + wasm grammars.
+# Engram launcher: self-contained bundle + wasm grammars. Needs nothing preinstalled: it uses your Node.js 22+
+# if there is one, otherwise it fetches the official Node.js build once (checksum-verified) into ~/.engram.
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 export ENGRAM_WASM_DIR="$DIR/dist"
-exec node --liftoff-only "$DIR/dist/engram.mjs" "$@"
+NODE_VER=v22.23.1
+EH="${ENGRAM_HOME:-$HOME/.engram}"
+NODE="${ENGRAM_NODE:-}"
+[ -z "$NODE" ] && [ -x "$EH/node-$NODE_VER/bin/node" ] && NODE="$EH/node-$NODE_VER/bin/node"
+[ -z "$NODE" ] && NODE="$(command -v node)"
+if [ -z "$NODE" ]; then
+  case "$(uname -s)-$(uname -m)" in
+    Darwin-arm64) P=darwin-arm64 ;; Darwin-x86_64) P=darwin-x64 ;;
+    Linux-x86_64) P=linux-x64 ;; Linux-aarch64 | Linux-arm64) P=linux-arm64 ;;
+    *) echo "engram: please install Node.js 22+ (https://nodejs.org)" >&2; exit 1 ;;
+  esac
+  F="node-$NODE_VER-$P.tar.gz"
+  T="$EH/.node-download-$$"
+  echo "engram: fetching Node.js $NODE_VER (one time)…" >&2
+  if command -v sha256sum >/dev/null; then SUM="sha256sum -c -"; else SUM="shasum -a 256 -c -"; fi
+  mkdir -p "$T" &&
+    curl -fsSL "https://nodejs.org/dist/$NODE_VER/$F" -o "$T/$F" &&
+    curl -fsSL "https://nodejs.org/dist/$NODE_VER/SHASUMS256.txt" -o "$T/SUMS" &&
+    (cd "$T" && grep " $F\$" SUMS | $SUM >/dev/null) &&
+    tar -xzf "$T/$F" -C "$T" &&
+    rm -rf "$T/node-$NODE_VER-$P/include" "$T/node-$NODE_VER-$P/share" "$T/node-$NODE_VER-$P/lib" &&
+    rm -rf "$EH/node-$NODE_VER" && mv "$T/node-$NODE_VER-$P" "$EH/node-$NODE_VER"
+  rm -rf "$T"
+  NODE="$EH/node-$NODE_VER/bin/node"
+  [ -x "$NODE" ] || { echo "engram: could not fetch Node.js; please install Node.js 22+ (https://nodejs.org)" >&2; exit 1; }
+fi
+exec "$NODE" --liftoff-only "$DIR/dist/engram.mjs" "$@"
