@@ -17,7 +17,7 @@ const [cmd, ...rest] = process.argv.slice(2);
 const flags = new Map<string, string>();
 const args: string[] = [];
 // On/off switches never take a value, so `pack --compact "task"` keeps the task as an argument.
-const SWITCHES = new Set(["compact", "fresh", "no-git", "latency"]);
+const SWITCHES = new Set(["compact", "fresh", "no-git", "latency", "remove", "no-index"]);
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === "--") break; // `engram run "task" -- <agent command>`: the rest belongs to the agent
   if (rest[i].startsWith("--")) {
@@ -37,6 +37,14 @@ async function main() {
     const task = process.argv.slice(3, sep < 0 ? undefined : sep).join(" ");
     return (await import("./adapters/wrap.js")).runWrapped(task, sep < 0 ? [] : process.argv.slice(sep + 1));
   }
+  if (cmd === "setup")
+    return (await import("./setup.js")).setup(flags, root, async () => {
+      const g = await RepoGraph.open(repo);
+      const t0 = performance.now();
+      const s = await indexRepo(g, root);
+      const h = flags.has("no-git") ? undefined : await ingestGit(g, root);
+      return `indexed ${repo}: ${s.files} files${h ? `, ${h.commits} commits` : ""} in ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+    });
   const g = await RepoGraph.open(repo);
   switch (cmd) {
     case "index": {
@@ -79,6 +87,7 @@ async function main() {
       break;
     default:
       console.log(`engram <command> [--root dir] [--repo slug]
+  setup [--url falkor://…] [--agents a,b] [--remove]   start FalkorDB, connect your agents, index this repo
   index [--fresh] [--no-git] [--commits N]   build/refresh the graph for a repo
   pack "<task>" [--budget tokens]              the context pack an agent would get
   find <name>                                  definition + callers/callees

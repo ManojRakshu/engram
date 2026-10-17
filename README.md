@@ -13,7 +13,7 @@ memory across sessions, and edit claims so parallel agents don't collide. **No L
 | **networkx**, 128k LOC (6 bugs × 1 run) + Engram | **−24%** | **−40%** | **−36%** | 5/5 (baseline 6/6) |
 | *For comparison:* + codebase-memory-mcp (47k★), click | −8% | −7% | −18% | 36/36 |
 
-[Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in 60 seconds](#install-in-60-seconds) · [How it works](#how-it-works) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
+[Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in one command](#install-in-one-command) · [How it works](#how-it-works) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
 
 </div>
 
@@ -103,57 +103,60 @@ all tool calls were the agent searching or navigating** (grep, sed, cat, find). 
 median of **24 search calls before the first edit**, and 44% of file views re-read a file already seen in that
 session.
 
-## Install in 60 seconds
+## Install in one command
 
-You need **Docker** (for FalkorDB) and **Node 22+**. No API keys: Engram makes no LLM calls.
+You need **Node 22+** and **Docker** (or any FalkorDB URL). No API keys: Engram makes no LLM calls.
 
-**1. Start FalkorDB** (once; the data persists in a Docker volume):
 ```bash
-docker run -d --name falkordb -p 6379:6379 -p 3000:3000 -v falkordb:/var/lib/falkordb/data falkordb/falkordb:v4.22.1
+git clone https://github.com/<owner>/engram ~/engram && ~/engram/plugin/bin/engram setup
 ```
 
-**2. Add Engram to your agent.** Pick one:
+`setup` does three things, prints every file it touches, and is safe to re-run:
 
-**Claude Code** (plugin: hooks + MCP tools). Inside Claude Code:
 ```
-/plugin marketplace add <owner>/engram
-/plugin install engram@engram
-```
-Restart Claude Code and work as usual. Your first prompt in a repo indexes it (click: ~1 s, 128k-line networkx: ~5 s).
-`/mcp` lists the `engram` tools.
-
-**Any MCP client** (Cursor, Codex, omp, OpenCode, …):
-```bash
-git clone https://github.com/<owner>/engram ~/engram    # self-contained, no npm install needed
-```
-```json
-{ "mcpServers": { "engram": { "command": "/absolute/path/to/engram/plugin/bin/engram", "args": ["mcp"] } } }
+FalkorDB
+  · creating Docker container engram-falkordb (falkordb/falkordb:v4.22.1) on localhost:6390, data in volume engram-falkordb-data…
+  ✓ running at falkor://localhost:6390
+  ✓ FalkorDB Browser: http://localhost:3010
+Agents
+  ✓ Claude Code: plugin installed (hooks + MCP tools); restart Claude Code
+  ✓ Cursor: added to ~/.cursor/mcp.json
+  ✓ Codex: added to ~/.codex/config.toml
+This repo
+  ✓ indexed pallets-click: 91 files, 669 commits in 0.7 s
 ```
 
-**Any CLI agent** that takes a prompt argument:
-```bash
-~/engram/plugin/bin/engram run "fix the flaky retry in the uploader" -- codex exec {prompt}
-```
+1. **FalkorDB.** Engram always runs on FalkorDB; `setup` only decides which one. It uses `FALKORDB_URL` if set,
+   otherwise it runs one in Docker, bound to localhost, with a persistent volume. All agents on the machine share
+   that one instance, so they share one memory and one set of edit claims. After a reboot, Engram restarts the
+   container on its own when an agent next needs it.
+   **FalkorDB Cloud or your own server:** `engram setup --url falkor://user:pass@host:port`. A team that points at
+   one instance shares lessons, verify commands and claims.
+2. **Agents.** It connects every agent it finds: Claude Code (the plugin, with hooks and MCP tools), and Cursor,
+   Codex, Gemini CLI, Windsurf and opencode (as an MCP server). `--agents cursor,codex` limits it to those.
+3. **This repo.** It indexes the repo you run it in. Any other repo is indexed on its first prompt (click: ~1 s,
+   128k-line networkx: ~5 s), then updated incrementally after every edit.
 
-**pi:**
-```bash
-cd ~/engram && npm install && pi --extension ~/engram/pi/engram.ts
-```
+**If FalkorDB is not reachable,** your agent keeps working as usual. Engram stays out of the way and Claude Code
+shows one line saying why.
 
-**3. Optional checks:**
+**Other agents.** Any MCP client: `{ "mcpServers": { "engram": { "command": "~/engram/plugin/bin/engram", "args": ["mcp"] } } }`
+(with the absolute path). Any CLI agent that takes a prompt:
+`~/engram/plugin/bin/engram run "fix the flaky retry" -- codex exec {prompt}`.
+pi: `cd ~/engram && npm install && pi --extension ~/engram/pi/engram.ts`.
+
+**Try it from a terminal:**
 ```bash
 cd your-repo
 ~/engram/plugin/bin/engram pack --compact "describe a bug"   # the map an agent would get
 ~/engram/plugin/bin/engram impact src/some/file.py           # blast radius
 ```
 
-**Configuration.** If FalkorDB isn't on `localhost:6379`, set `FALKORDB_URL` (for example
-`falkor://default:<password>@host:port` for FalkorDB Cloud). Each feature can be switched off in
-`engram.config.json` or with `ENGRAM_PACK`, `ENGRAM_JIT`, `ENGRAM_MEMORY`, `ENGRAM_CLAIMS` or `ENGRAM_HISTORY`
-set to `0`.
+**Configuration.** Each feature can be switched off in `engram.config.json` or with `ENGRAM_PACK`, `ENGRAM_JIT`,
+`ENGRAM_MEMORY`, `ENGRAM_CLAIMS` or `ENGRAM_HISTORY` set to `0`.
 
-**Uninstall:** run `/plugin uninstall engram` (or remove the MCP entry), then `engram forget` inside a repo to
-drop its graph. Nothing else is written.
+**Uninstall:** `engram setup --remove` disconnects every agent. `engram forget` in a repo drops its graph, and
+`docker rm -f engram-falkordb` removes FalkorDB. Nothing else is written outside `~/.engram/config.json`.
 
 ## How it works
 

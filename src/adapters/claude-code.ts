@@ -3,6 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import os from "node:os";
 import path from "node:path";
 import { EngramSession, type SessionState } from "../core/session.js";
+import { FalkorUnavailable } from "../falkor.js";
 
 /**
  * Claude Code adapter: hooks → EngramSession. Each hook is a separate process, so the session
@@ -29,6 +30,7 @@ interface HookInput {
 
 interface Persisted extends SessionState {
   transcriptOffset?: number;
+  warned?: boolean;
 }
 
 const MAX_CONTEXT_CHARS = 9500; // Claude Code caps injected context at 10k characters
@@ -81,9 +83,19 @@ export async function runClaudeCodeHook() {
   const root = gitRoot(input.cwd ?? process.cwd());
   if (!root || !input.session_id) return; // not a git repo: stay out of the way
   const persisted = load(input.session_id);
-  const es = (
-    await EngramSession.open({ root, agent: process.env.ENGRAM_AGENT ?? `claude-code-${input.session_id.slice(0, 8)}` })
-  ).restore(persisted);
+  let opened: EngramSession;
+  try {
+    opened = await EngramSession.open({ root, agent: process.env.ENGRAM_AGENT ?? `claude-code-${input.session_id.slice(0, 8)}` });
+  } catch (e) {
+    if (!(e instanceof FalkorUnavailable)) throw e;
+    // Fail open: the agent works as usual. Tell the user once per session (systemMessage costs no model tokens).
+    if (input.hook_event_name === "UserPromptSubmit" && !persisted.warned) {
+      process.stdout.write(JSON.stringify({ systemMessage: `Engram is off for now: ${e.message}` }));
+      save(input.session_id, { ...persisted, warned: true });
+    }
+    return;
+  }
+  const es = opened.restore(persisted);
   const rel = (p: unknown) => {
     if (typeof p !== "string") return undefined;
     const r = path.relative(root, path.isAbsolute(p) ? p : path.join(root, p));

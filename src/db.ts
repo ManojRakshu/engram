@@ -1,5 +1,6 @@
 import { FalkorDB, type Graph } from "falkordb";
 import dotenv from "dotenv";
+import { ensureFalkor } from "./falkor.js";
 dotenv.config({ quiet: true });
 
 export type Params = Record<string, unknown>;
@@ -32,9 +33,11 @@ let connecting: Promise<FalkorDB> | undefined;
 
 export async function connect(): Promise<FalkorDB> {
   if (client) return client;
-  connecting ??= FalkorDB.connect({
-    url: process.env.FALKORDB_URL ?? "falkor://localhost:6379",
-  }).then((c) => (client = c));
+  // ensureFalkor: FALKORDB_URL, else the saved URL, else start (or create) the local container.
+  connecting ??= ensureFalkor()
+    .then((url) => FalkorDB.connect({ url }))
+    .then((c) => (client = c));
+  connecting.catch(() => (connecting = undefined));
   return connecting;
 }
 
