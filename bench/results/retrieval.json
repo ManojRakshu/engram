@@ -2,94 +2,107 @@
   "pallets/click": {
     "n": 12,
     "top1": 3,
-    "top3": 5,
+    "top3": 6,
     "top10": 8,
     "fileTop3": 10,
-    "medianMs": 22,
+    "shownInMap": 8,
+    "medianMs": 70,
     "perTask": [
       {
         "task": "clamp-max",
         "gold": "src/click/types.py#_NumberRangeBase.convert",
         "rank": 3,
+        "shown": 3,
         "fileRank": 1,
-        "ms": 34
+        "ms": 107
       },
       {
         "task": "clamp-open",
         "gold": "src/click/types.py#IntRange._clamp",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 23
+        "ms": 90
       },
       {
         "task": "bool-on",
         "gold": "src/click/types.py#BoolParamType",
         "rank": 0,
+        "shown": 0,
         "fileRank": 2,
-        "ms": 20
+        "ms": 67
       },
       {
         "task": "split-opt",
         "gold": "src/click/parser.py#_split_opt",
-        "rank": 9,
+        "rank": 2,
+        "shown": 2,
         "fileRank": 1,
-        "ms": 26
+        "ms": 70
       },
       {
         "task": "short-help",
         "gold": "src/click/utils.py#_make_default_short_help",
         "rank": 5,
+        "shown": 5,
         "fileRank": 2,
-        "ms": 24
+        "ms": 47
       },
       {
         "task": "measure-table",
         "gold": "src/click/formatting.py#measure_table",
         "rank": 0,
+        "shown": 0,
         "fileRank": 0,
-        "ms": 22
+        "ms": 61
       },
       {
         "task": "choice-case",
         "gold": "src/click/types.py#Choice.normalize_choice",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 18
+        "ms": 71
       },
       {
         "task": "envvar-auto",
         "gold": "src/click/core.py#Option.resolve_envvar_value",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 26
+        "ms": 64
       },
       {
         "task": "envvar-nested",
         "gold": "src/click/core.py#Context.__init__",
         "rank": 5,
+        "shown": 5,
         "fileRank": 1,
-        "ms": 19
+        "ms": 64
       },
       {
         "task": "eager-order",
         "gold": "src/click/core.py#sort_key",
         "rank": 0,
+        "shown": 0,
         "fileRank": 3,
-        "ms": 18
+        "ms": 63
       },
       {
         "task": "style-bold",
         "gold": "src/click/termui.py#style",
         "rank": 2,
+        "shown": 2,
         "fileRank": 1,
-        "ms": 17
+        "ms": 75
       },
       {
         "task": "join-options",
         "gold": "src/click/formatting.py#join_options",
         "rank": 0,
+        "shown": 0,
         "fileRank": 0,
-        "ms": 19
+        "ms": 79
       }
     ]
   },
@@ -99,49 +112,56 @@
     "top3": 4,
     "top10": 6,
     "fileTop3": 6,
-    "medianMs": 87,
+    "shownInMap": 6,
+    "medianMs": 167,
     "perTask": [
       {
         "task": "sspl-level",
         "gold": "networkx/algorithms/shortest_paths/unweighted.py#_single_shortest_path_length",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 87
+        "ms": 167
       },
       {
         "task": "dijkstra-relax",
         "gold": "networkx/algorithms/shortest_paths/weighted.py#_dijkstra_multisource",
         "rank": 5,
+        "shown": 5,
         "fileRank": 1,
-        "ms": 96
+        "ms": 223
       },
       {
         "task": "components-bfs",
         "gold": "networkx/algorithms/components/connected.py#_plain_bfs",
         "rank": 3,
+        "shown": 3,
         "fileRank": 1,
-        "ms": 63
+        "ms": 134
       },
       {
         "task": "triangles-selfloop",
         "gold": "networkx/algorithms/cluster.py#_triangles_and_degree_iter",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 76
+        "ms": 174
       },
       {
         "task": "topo-generations",
         "gold": "networkx/algorithms/dag.py#topological_generations",
         "rank": 1,
+        "shown": 1,
         "fileRank": 1,
-        "ms": 62
+        "ms": 162
       },
       {
         "task": "bellman-count",
         "gold": "networkx/algorithms/shortest_paths/weighted.py#_inner_bellman_ford",
         "rank": 6,
+        "shown": 6,
         "fileRank": 1,
-        "ms": 90
+        "ms": 163
       }
     ]
   }

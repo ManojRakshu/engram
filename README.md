@@ -76,7 +76,7 @@ hooks take ~50 ms p50 and inject ~14 tokens on average. These are included in al
 fix is about 3 calls (read, edit, test); Engram averages 3.6.
 
 **Honest notes:**
-- Engram missed one fix in 36 on click (cold and warm, 35/36 each).
+- Engram missed one fix in 36 on click (cold and warm, 35/36 each). Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on our side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
 - The codebase-memory-mcp setup is exactly what its installer configures (MCP + hooks + subagents), scoped to each
   benchmark workspace; skills are disabled for *all* setups so user-level skills can't leak in.
 - The cross-layer "usually changed together but not touched yet" hint was added after these runs, so it is not
@@ -94,8 +94,9 @@ fix is about 3 calls (read, edit, test); Engram averages 3.6.
 - Same model and same harness (`claude -p`, headless); the only difference is the Engram plugin.
 - Errored runs are excluded and reported. Raw JSONL per run is in `bench/results/`.
 
-**Retrieval alone, with zero LLM tokens** (`bench/retrieval.ts`): the buggy function is in the injected map's top 10
-for 8/12 click bugs and **6/6 networkx bugs**; the buggy *file* is in the top 3 for 10/12 and **6/6**. A pack takes
+**Retrieval alone, with zero LLM tokens** (`bench/retrieval.ts`): the buggy function is in the pack's top 10
+for 8/12 click bugs and **6/6 networkx bugs**, and on its own line of the ~200-token map the agent sees for 8/12 and
+**6/6**; the buggy *file* is in the top 3 for 10/12 and **6/6**. A pack takes
 ~20 ms on click and ~90 ms on networkx.
 
 **Why this matters, from real usage:** across 83 of the author's own Claude Code sessions (32,713 tool calls), **31% of

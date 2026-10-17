@@ -328,6 +328,36 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   const memberOf = new Set(items.filter((i) => i.kind === "method").map((i) => i.id.split("#")[1]?.split(".")[0]));
   items = items.filter((i) => !(i.kind === "class" && memberOf.has(i.name) && i.endLine - i.startLine > 40));
 
+  // A tiny wrapper ranks high when the report's words match its name, but the logic (and the bug) usually sits
+  // in the function it delegates to. Give that function its own line right below the wrapper, or the agent may
+  // "fix" the wrapper (seen in the click benchmark: _normalize_opt edited, bug in _split_opt).
+  const tiny = items.slice(0, 3).filter((i) => i.kind !== "class" && i.endLine - i.startLine <= 6);
+  if (tiny.length) {
+    const delegates = await g.read<Omit<PackItem, "score" | "why"> & { wrapper: string }>(
+      "pack.delegate",
+      `UNWIND $ids AS id MATCH (w:Symbol {id: id})-[:CALLS]->(s:Symbol)
+       WHERE s.path = w.path AND NOT s.isTest AND s.kind <> 'class'
+       WITH w, s ORDER BY s.endLine - s.startLine DESC
+       WITH w, collect(s)[0] AS s
+       RETURN w.id AS wrapper, s.id AS id, s.name AS name, s.kind AS kind, s.path AS path, s.startLine AS startLine,
+              s.endLine AS endLine, s.signature AS signature, s.doc AS doc`,
+      { ids: tiny.map((t) => t.id) },
+    );
+    for (const { wrapper, ...d } of delegates) {
+      const wi = items.findIndex((i) => i.id === wrapper);
+      const at = items.findIndex((i) => i.id === d.id);
+      if (wi < 0 || (at >= 0 && at <= wi + 1)) continue; // already right below (or above) the wrapper
+      const w = items[wi];
+      const prev = at >= 0 ? items.splice(at, 1)[0] : undefined;
+      const qual = w.id.split("#")[1]?.replace(/@\d+$/, "") ?? w.name;
+      items.splice(items.indexOf(w) + 1, 0, {
+        ...(prev ?? d),
+        score: w.score,
+        why: [`does the work for ${qual} (a ${w.endLine - w.startLine + 1}-line wrapper)`, ...(prev?.why ?? [])],
+      });
+    }
+  }
+
   // 4. Tests that exercise the top symbols (callers living in test files), and history for the top files.
   const top = items.slice(0, 6);
   const topPaths = [...new Set(top.map((i) => i.path))].slice(0, 3);
@@ -389,7 +419,9 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     ms: 0,
     seeds: seeds.length,
     confidence: {
-      level: exact.length > 0 || topName >= 9 ? "high" : topName >= 5.5 ? "medium" : "low",
+      // "high" only when an identifier quoted in the report exists in the code: on the 18 benchmark bugs that
+      // label was right 10/10 times, while a strong name match alone was right about half the time.
+      level: exact.length > 0 ? "high" : topName >= 5.5 ? "medium" : "low",
       exact: exact.length > 0,
       topName: Math.round(topName * 100) / 100,
       margin: Math.round(margin * 100) / 100,
@@ -469,10 +501,13 @@ export function renderPack(p: Pack) {
 export function renderCompact(p: Pack, maxItems = p.confidence.level === "low" ? 3 : 6) {
   if (!p.items.length) return "";
   const lines = [`[engram] Likely locations for this task (code graph, confidence ${p.confidence.level}):`];
-  for (const it of p.items.slice(0, maxItems)) {
+  const shown = p.items.slice(0, maxItems);
+  const shownQual = new Set(shown.map((it) => it.id.split("#")[1]?.replace(/@\d+$/, "")));
+  for (const it of shown) {
     const qual = it.id.split("#")[1]?.replace(/@\d+$/, "") ?? it.name;
     const why = it.why[0]?.replace(/`/g, "").replace(/^matches task terms /, "") ?? "";
-    lines.push(`- ${it.path}:${it.startLine}-${it.endLine} ${qual}${why ? ` (${why.slice(0, 60)})` : ""}${it.callees?.length ? ` → calls ${it.callees.join(", ")}` : ""}`);
+    const next = it.callees?.filter((c) => !shownQual.has(c.split(" (")[0])) ?? []; // no need to repeat a listed line
+    lines.push(`- ${it.path}:${it.startLine}-${it.endLine} ${qual}${why ? ` (${why.slice(0, 60)})` : ""}${next.length ? ` → calls ${next.join(", ")}` : ""}`);
   }
   if (p.tests.length) lines.push(`Tests: ${p.tests.slice(0, 3).join(", ")}`);
   for (const l of p.lessons.slice(0, 2)) lines.push(`Lesson: ${l.text}${l.about ? ` (${l.about})` : ""}`);

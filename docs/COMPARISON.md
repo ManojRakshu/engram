@@ -26,13 +26,14 @@ single-commit snapshots, symptom-only bug reports, and a fix counts only if the 
 | + Engram, warm memory | 6/6 | 92.2k (−16%) | — | — |
 
 **Reading it honestly**
-- **Accuracy:** the same within run-to-run noise. Engram missed one click fix out of 36 (`split-opt`: the agent
-  fixed the caller instead of the helper), and the baseline also fails that task in some runs.
+- **Accuracy:** the same within run-to-run noise. Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on our side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
 - **What disappears is searching.** Search calls halve (3.4 → 1.7). A fix needs at least ~3 calls (read, edit,
   test), and Engram averages 3.6.
 - **Cost per fix drops less than tokens (−6%),** because most input tokens are cheap cache reads.
 - **Retrieval alone, with zero LLM tokens,** puts the buggy function in the top 10 for 8 of 12 click bugs and 6 of 6
-  networkx bugs, and the right file in the top 3 for 10 of 12 and 6 of 6.
+  networkx bugs, on its own line of the map the agent sees for 8 of 12 and 6 of 6, and the right file in the top 3
+  for 10 of 12 and 6 of 6. "Confidence high" is shown for 10 of the 18 bugs, and the buggy function is on the map
+  in all 10.
 - **Overhead per agent turn:** about 150 ms and about 220 injected tokens at the prompt; about 50 ms and about 14
   tokens per tool hook. Those tokens are counted in the results above.
 
@@ -98,7 +99,8 @@ Commands: `codebase-memory-mcp cli index_repository --repo-path <repo>` (RAM sam
   Intel Macs and older Linux distributions fall back to Docker or `--url`. There is no native Windows support.
 - **Benchmark scope:** one model (Haiku) and 18 bugs in two Python repos. networkx has one repeat. The benchmark ran
   on FalkorDB 4.22.1 in Docker; the embedded build is 4.18.3, and the same queries and tests pass on it.
-- **One click miss** (35/36 against 36/36), reported rather than re-run away.
+- **One click miss** (35/36 against 36/36), reported rather than re-run away. The cause is found and fixed (see
+  section 1), but the benchmark was not re-run, so the published number stays 35/36.
 - **Warm memory helps less than cold on click** (−24% against −25%). An earlier version of procedural memory made
   things worse; that is fixed, and the story is in the blog.
 
