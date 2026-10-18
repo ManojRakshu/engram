@@ -47,7 +47,33 @@ export interface IndexStats {
  * Callers in unchanged files that point at names defined in changed files are re-resolved,
  * so CALLS edges stay correct after edits — this is what keeps the graph current mid-session.
  */
+/**
+ * One indexer per repo at a time, across processes (two agents opening a repo together, a hook and the MCP server).
+ * The lock is a single Cypher write, atomic because FalkorDB serialises writes per graph; a lock older than
+ * 5 minutes belongs to a crashed indexer. A waiter then indexes incrementally and finds the work already done.
+ */
 export async function indexRepo(g: RepoGraph, root: string, only?: string[]): Promise<IndexStats> {
+  const me = `${process.pid}-${Math.random().toString(36).slice(2)}`;
+  const take = async () =>
+    (
+      await g.write<{ got: boolean }>(
+        "index.lock",
+        `MERGE (l:IndexLock {k: 1})
+         WITH l, (l.owner IS NULL OR l.at < $stale) AS free
+         SET l.owner = CASE WHEN free THEN $me ELSE l.owner END, l.at = CASE WHEN free THEN $now ELSE l.at END
+         RETURN l.owner = $me AS got`,
+        { me, now: Date.now(), stale: Date.now() - 300_000 },
+      )
+    )[0]?.got;
+  while (!(await take())) await new Promise((r) => setTimeout(r, 200));
+  try {
+    return await indexUnlocked(g, root, only);
+  } finally {
+    await g.write("index.unlock", "MATCH (l:IndexLock {k: 1, owner: $me}) SET l.owner = null", { me });
+  }
+}
+
+async function indexUnlocked(g: RepoGraph, root: string, only?: string[]): Promise<IndexStats> {
   const t0 = performance.now();
   await ensureSchema(g);
   await g.write("index.repo", "MERGE (r:Repo {name: $name}) SET r.root = $root, r.indexedAt = timestamp()", {
