@@ -45,11 +45,22 @@ export async function installBinaries(log: (s: string) => void = () => {}) {
   if (!build) throw new Error(`no embedded FalkorDB build for ${process.platform}-${process.arch}`);
   if (binariesReady()) return;
   log(`downloading FalkorDB (FalkorDBLite ${WHEEL}, one time)…`);
-  const res = await fetch(build.url);
-  if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`);
-  const zip = Buffer.from(await res.arrayBuffer());
-  const sha = createHash("sha256").update(zip).digest("hex");
-  if (sha !== build.sha256) throw new Error(`checksum mismatch for the FalkorDB download (${sha})`);
+  let zip: Buffer | undefined;
+  for (let attempt = 1; !zip; attempt++) {
+    // A dropped connection shows up as an error or a short (checksum-failing) body: retry, never hang.
+    try {
+      const res = await fetch(build.url, { signal: AbortSignal.timeout(180_000) });
+      if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`);
+      const body = Buffer.from(await res.arrayBuffer());
+      const sha = createHash("sha256").update(body).digest("hex");
+      if (sha !== build.sha256) throw new Error(`checksum mismatch for the FalkorDB download (${sha})`);
+      zip = body;
+    } catch (e) {
+      if (attempt >= 3) throw e;
+      log(`download interrupted (${(e as Error).message}); retrying…`);
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
   const tmp = `${binDir()}.tmp-${process.pid}`;
   rmSync(tmp, { recursive: true, force: true });
   for (const e of unzip(zip, (n) => KEEP.test(n))) {

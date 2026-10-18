@@ -20,9 +20,10 @@ if [ -z "$NODE" ]; then
   T="$EH/.node-download-$$"
   echo "engram: fetching Node.js $NODE_VER (one time)…" >&2
   if command -v sha256sum >/dev/null; then SUM="sha256sum -c -"; else SUM="shasum -a 256 -c -"; fi
+  get() { for _ in 1 2 3; do curl -fsSL --connect-timeout 20 "$1" -o "$2" && return 0; sleep 2; done; return 1; } # flaky networks
   mkdir -p "$T" &&
-    curl -fsSL "https://nodejs.org/dist/$NODE_VER/$F" -o "$T/$F" &&
-    curl -fsSL "https://nodejs.org/dist/$NODE_VER/SHASUMS256.txt" -o "$T/SUMS" &&
+    get "https://nodejs.org/dist/$NODE_VER/$F" "$T/$F" &&
+    get "https://nodejs.org/dist/$NODE_VER/SHASUMS256.txt" "$T/SUMS" &&
     (cd "$T" && grep " $F\$" SUMS | $SUM >/dev/null) &&
     tar -xzf "$T/$F" -C "$T" &&
     rm -rf "$T/node-$NODE_VER-$P/include" "$T/node-$NODE_VER-$P/share" "$T/node-$NODE_VER-$P/lib" &&
