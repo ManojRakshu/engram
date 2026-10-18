@@ -1,0 +1,133 @@
+{
+ "repo": "yt-dlp/yt-dlp",
+ "base": "ebf0c0f61e (2026-04-30)",
+ "model": "claude-haiku-5-5",
+ "task": "Real GitHub issue (title + description, no logs). Agent must name the file and function to fix; scored against the maintainers' actual fix commit.",
+ "note": "One run per issue and setup. Fresh single-commit copies at the base commit, so the fix is not in git history.",
+ "runs": [
+  {
+   "setup": "claude-code",
+   "issue": 16359,
+   "title": "This Old House No Longer Recognized URL",
+   "fixCommit": "70050a6262",
+   "inputTokens": 92333,
+   "toolCalls": 3,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Read"
+   ],
+   "seconds": 7.6,
+   "costUsd": 0.0031,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code",
+   "issue": 16674,
+   "title": "[onsen.ag] Unable to Download, 403 Forbidden",
+   "fixCommit": "bc90c36b13",
+   "inputTokens": 115040,
+   "toolCalls": 4,
+   "tools": [
+    "Grep",
+    "Bash",
+    "Bash",
+    "Read"
+   ],
+   "seconds": 13.0,
+   "costUsd": 0.00359,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code",
+   "issue": 17466,
+   "title": "Whyp.it changed their urls",
+   "fixCommit": "d3ea2cf84a",
+   "inputTokens": 90095,
+   "toolCalls": 3,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "seconds": 11.3,
+   "costUsd": 0.00291,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code",
+   "issue": 17506,
+   "title": "[Bandcamp:album] Unable to extract tralbum data",
+   "fixCommit": "1d1351f40f",
+   "inputTokens": 66870,
+   "toolCalls": 2,
+   "tools": [
+    "Bash",
+    "Bash"
+   ],
+   "seconds": 12.5,
+   "costUsd": 0.00257,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code+engram",
+   "issue": 16359,
+   "title": "This Old House No Longer Recognized URL",
+   "fixCommit": "70050a6262",
+   "inputTokens": 50677,
+   "toolCalls": 1,
+   "tools": [
+    "Read"
+   ],
+   "seconds": 6.8,
+   "costUsd": 0.00213,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code+engram",
+   "issue": 16674,
+   "title": "[onsen.ag] Unable to Download, 403 Forbidden",
+   "fixCommit": "bc90c36b13",
+   "inputTokens": 100632,
+   "toolCalls": 3,
+   "tools": [
+    "Bash",
+    "Bash",
+    "Bash"
+   ],
+   "seconds": 10.2,
+   "costUsd": 0.00294,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code+engram",
+   "issue": 17466,
+   "title": "Whyp.it changed their urls",
+   "fixCommit": "d3ea2cf84a",
+   "inputTokens": 49291,
+   "toolCalls": 1,
+   "tools": [
+    "Read"
+   ],
+   "seconds": 7.6,
+   "costUsd": 0.00187,
+   "foundFixedFunction": true
+  },
+  {
+   "setup": "claude-code+engram",
+   "issue": 17506,
+   "title": "[Bandcamp:album] Unable to extract tralbum data",
+   "fixCommit": "1d1351f40f",
+   "inputTokens": 49446,
+   "toolCalls": 3,
+   "tools": [
+    "Read",
+    "Read",
+    "Bash"
+   ],
+   "seconds": 9.2,
+   "costUsd": 0.0021,
+   "foundFixedFunction": true
+  }
+ ]
+}

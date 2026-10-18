@@ -99,6 +99,16 @@ for 8/12 click bugs and **6/6 networkx bugs**, and on its own line of the ~200-t
 **6/6**; the buggy *file* is in the top 3 for 10/12 and **6/6**. A pack takes
 ~20 ms on click and ~90 ms on networkx.
 
+**Real-world check: yt-dlp's own bug reports.** yt-dlp is a messy, real codebase: 1,128 Python files, 248k lines,
+years of community patches. I indexed it as of 30 Apr 2026 (4.0 s) and took every later bug fix that closes a GitHub
+issue. Engram gets only the user's issue (title and description, no logs) and is scored against the functions the
+maintainers actually changed ([`bench/realworld.ts`](bench/realworld.ts)):
+- **Zero LLM tokens, 30 real issues:** the right file is in the top 3 for **22/30**, the fixed function is in the top
+  10 for 20/30 and on the ~200-token map for 16/30. Median 240 ms.
+- **Live Claude Code, 4 of those issues** (one run each, fresh copies with the fix not in git): both setups named the
+  right file and function 4/4; with Engram it took **−31% tokens, −33% tool calls, −24% time**
+  ([raw results](bench/results/realworld-live.json)).
+
 **Why this matters, from real usage:** across 83 of my own Claude Code sessions (32,713 tool calls), **31% of
 all tool calls were the agent searching or navigating** (grep, sed, cat, find). Only 9% were edits. There was a
 median of **24 search calls before the first edit**, and 44% of file views re-read a file already seen in that
