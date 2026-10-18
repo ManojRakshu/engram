@@ -1,7 +1,9 @@
 import { FalkorDB, type Graph } from "falkordb";
 import dotenv from "dotenv";
 import { ensureFalkor } from "./falkor.js";
-dotenv.config({ quiet: true });
+// Dev convenience only: the shipped bundle never reads a .env, because hooks run in the user's project and
+// a FALKORDB_URL there belongs to their app, not to Engram.
+if (!process.env.ENGRAM_BUNDLED) dotenv.config({ quiet: true });
 
 export type Params = Record<string, unknown>;
 

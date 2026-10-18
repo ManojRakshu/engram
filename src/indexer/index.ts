@@ -278,11 +278,15 @@ async function resolveCalls(g: RepoGraph, changedPaths: string[], oldNames: stri
 
 /** Global structural priors: PageRank over the call graph, and label-propagation communities. */
 export async function refreshRanks(g: RepoGraph) {
-  await g.write("index.pagerank", "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score SET node.rank = score");
-  await g.write(
-    "index.communities",
-    "CALL algo.labelPropagation({nodeLabels: ['Symbol'], relationshipTypes: ['CALLS', 'HAS_MEMBER']}) YIELD node, communityId SET node.community = communityId",
-  );
+  // labelPropagation rejects a relationship type the graph doesn't have yet (a new repo with no calls).
+  const have = new Set((await g.read<{ t: string }>("index.reltypes", "CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType AS t")).map((r) => r.t));
+  const types = ["CALLS", "HAS_MEMBER"].filter((t) => have.has(t));
+  if (have.has("CALLS")) await g.write("index.pagerank", "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score SET node.rank = score");
+  if (types.length)
+    await g.write(
+      "index.communities",
+      `CALL algo.labelPropagation({nodeLabels: ['Symbol'], relationshipTypes: ${JSON.stringify(types).replaceAll('"', "'")}}) YIELD node, communityId SET node.community = communityId`,
+    );
 }
 
 export function chunks<T>(arr: T[], n: number): T[][] {

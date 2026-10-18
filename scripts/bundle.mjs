@@ -20,6 +20,7 @@ await build({
   chunkNames: "chunks/[name]-[hash]",
   outExtension: { ".js": ".mjs" },
   banner: { js: "import { createRequire as __cr } from 'node:module'; import { fileURLToPath as __fu } from 'node:url'; import { dirname as __dn } from 'node:path'; const require = __cr(import.meta.url); const __filename = __fu(import.meta.url); const __dirname = __dn(__filename);" },
+  define: { "process.env.ENGRAM_BUNDLED": '"1"' },
   external: ["@earendil-works/*"],
   minify: true,
   legalComments: "none",

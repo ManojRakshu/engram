@@ -130,6 +130,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function ensureEmbedded(waitMs: number, foreground: boolean, log: (s: string) => void): Promise<string> {
   if (!binariesReady()) {
     if (!foreground) {
+      // Only the engram CLI itself (hooks, MCP) can re-run as `engram db start`; the dashboard and tests can't.
+      if (!/(engram\.mjs|cli\.ts)$/.test(process.argv[1] ?? "")) throw new FalkorUnavailable("FalkorDB is not running yet: run `engram db start`.");
       spawn(process.execPath, [...process.execArgv, process.argv[1], "db", "start"], { detached: true, stdio: "ignore", env: process.env }).unref();
       throw new FalkorUnavailable("Engram is downloading FalkorDB (one time, a few seconds). It switches on with your next prompt.");
     }
