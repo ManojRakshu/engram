@@ -237,7 +237,7 @@ Every query the product depends on, and the algorithms it uses, are in **[docs/C
 
 ## Demo
 
-**Video (2 min):** https://youtu.be/jwso6cm9fqY · **Short (30 s):** https://youtube.com/shorts/aSS2mSwJzmI
+**Video (2 min):** https://youtu.be/jwso6cm9fqY · **Short (30 s):** https://youtube.com/shorts/aSS2mSwJzmI · **Blog:** [the story and what went wrong](https://dev.to/manoj_shetty/my-coding-agent-kept-searching-the-same-repo-again-and-again-so-i-gave-it-a-memory-481g)
 
 The dashboard (run it with the command under [Run it locally](#run-it-locally)) shows:
 - **Ask the graph:** type a task; see the pack and *why* each item is in it, as a graph.
