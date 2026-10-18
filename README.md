@@ -109,7 +109,7 @@ session.
 Nothing to install first: no Docker, no database server, no Node.js, no API keys.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/engram/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh
 ```
 
 Run it inside a repo. Real output from a fresh user profile whose PATH had only the system directories (no Node, Docker or Homebrew), with paths shortened:
