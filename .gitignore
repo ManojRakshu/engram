@@ -11,3 +11,6 @@ bench/results/streams/
 !plugin/dist/
 !plugin/dist/**
 .DS_Store
+
+# launch notes and drafts (kept locally)
+docs/marketing/*.md

@@ -1,7 +1,7 @@
 # How Engram compares
 
 Every number here is measured in this repo (the reports under `bench/results/final/`), or measured on one
-Apple-silicon Mac on Oct 17 2026 with the commands shown. Tools we did not benchmark are described from their own
+Apple-silicon Mac on Oct 17 2026 with the commands shown. Tools I did not benchmark are described from their own
 docs and are marked as such.
 
 ## 1. Results on real bugs (same model, same agent, same time window)
@@ -26,7 +26,7 @@ single-commit snapshots, symptom-only bug reports, and a fix counts only if the 
 | + Engram, warm memory | 6/6 | 92.2k (−16%) | — | — |
 
 **Reading it honestly**
-- **Accuracy:** the same within run-to-run noise. Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on our side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
+- **Accuracy:** the same within run-to-run noise. Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on Engram's side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
 - **What disappears is searching.** Search calls halve (3.4 → 1.7). A fix needs at least ~3 calls (read, edit,
   test), and Engram averages 3.6.
 - **Cost per fix drops less than tokens (−6%),** because most input tokens are cheap cache reads.
@@ -37,7 +37,7 @@ single-commit snapshots, symptom-only bug reports, and a fix counts only if the 
 - **Overhead per agent turn:** about 150 ms and about 220 injected tokens at the prompt; about 50 ms and about 14
   tokens per tool hook. Those tokens are counted in the results above.
 
-## 2. Setup: what the user has to do
+## 2. Setup: what you have to do
 
 | | Install | Needs preinstalled | Database | LLM calls / API key | Agents it wires up |
 |---|---|---|---|---|---|

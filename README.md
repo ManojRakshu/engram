@@ -76,12 +76,12 @@ hooks take ~50 ms p50 and inject ~14 tokens on average. These are included in al
 fix is about 3 calls (read, edit, test); Engram averages 3.6.
 
 **Honest notes:**
-- Engram missed one fix in 36 on click (cold and warm, 35/36 each). Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on our side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
+- Engram missed one fix in 36 on click (cold and warm, 35/36 each). Both misses are one run of one bug (`split-opt`, repeat 1): the agent edited the 5-line wrapper `_normalize_opt` instead of `_split_opt`, which it calls. Plain Claude Code failed this same bug in 3 of 11 earlier runs (older harness versions, archived in `bench/results/`). The cause on Engram's side was the map: it listed the wrapper and named `_split_opt` only as its next call, under a "confidence high" label. Fixed after the benchmark: a tiny wrapper's delegate now gets its own line, and "high" now requires an identifier from the report to exist in the code. The zero-token retrieval check confirms it (`_split_opt` from rank 9 to rank 2, no other bug changed). These benchmark numbers were not re-run, so they still show the miss.
 - The codebase-memory-mcp setup is exactly what its installer configures (MCP + hooks + subagents), scoped to each
   benchmark workspace; skills are disabled for *all* setups so user-level skills can't leak in.
 - The cross-layer "usually changed together but not touched yet" hint was added after these runs, so it is not
   reflected in the numbers above.
-- An earlier version of our harness let agents read the injected bug through `git diff`. We caught it and rebuilt the
+- An earlier version of my harness let agents read the injected bug through `git diff`. I caught it and rebuilt the
   harness, and those runs are discarded.
 
 **How it's measured** (the full harness is in [`bench/`](bench/)):
@@ -89,7 +89,7 @@ fix is about 3 calls (read, edit, test); Engram averages 3.6.
   bug was validated to break the project's test suite.
 - The agent sees only a user-style symptom report, never the function name or the file.
 - Every run gets a fresh single-commit snapshot, so `git diff` and `git log` can't leak the answer. (An early run of
-  ours leaked it; we caught that and rebuilt the harness.)
+  mine leaked it; I caught that and rebuilt the harness.)
 - **Pass** means the project's full test suite passes after the agent finishes.
 - Same model and same harness (`claude -p`, headless); the only difference is the Engram plugin.
 - Errored runs are excluded and reported. Raw JSONL per run is in `bench/results/`.
@@ -99,7 +99,7 @@ for 8/12 click bugs and **6/6 networkx bugs**, and on its own line of the ~200-t
 **6/6**; the buggy *file* is in the top 3 for 10/12 and **6/6**. A pack takes
 ~20 ms on click and ~90 ms on networkx.
 
-**Why this matters, from real usage:** across 83 of the author's own Claude Code sessions (32,713 tool calls), **31% of
+**Why this matters, from real usage:** across 83 of my own Claude Code sessions (32,713 tool calls), **31% of
 all tool calls were the agent searching or navigating** (grep, sed, cat, find). Only 9% were edits. There was a
 median of **24 search calls before the first edit**, and 44% of file views re-read a file already seen in that
 session.
