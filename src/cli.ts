@@ -46,7 +46,7 @@ async function main() {
     const { ensureFalkor, saved } = await import("./falkor.js");
     const { stopServer } = await import("./embedded.js");
     if (args[0] === "stop") {
-      const pid = stopServer();
+      const pid = await stopServer();
       return console.log(pid ? `stopped embedded FalkorDB (pid ${pid}); the graph is saved` : "embedded FalkorDB is not running");
     }
     const url = await ensureFalkor({ foreground: true, waitMs: 180_000, log: (m) => console.log(m) });

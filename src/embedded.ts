@@ -159,12 +159,22 @@ export function tryLock(): (() => void) | undefined {
   return undefined;
 }
 
-export function stopServer() {
+/** Stop the shared server and wait (up to 30 s) until it has saved the graph and exited. */
+export async function stopServer() {
+  let pid: number;
   try {
-    const pid = Number(readFileSync(pidFile(), "utf8"));
+    pid = Number(readFileSync(pidFile(), "utf8"));
     process.kill(pid, "SIGTERM"); // redis-server saves the graph on SIGTERM
-    return pid;
   } catch {
     return undefined;
   }
+  for (let i = 0; i < 300; i++) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return pid;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return pid;
 }
