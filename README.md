@@ -13,7 +13,7 @@ memory across sessions, and edit claims so parallel agents don't collide. **No L
 | **networkx**, 128k LOC (6 bugs × 1 run) + Engram | **−24%** | **−40%** | **−36%** | 5/5 (baseline 6/6) |
 | *For comparison:* + codebase-memory-mcp (47k★), click | −8% | −7% | −18% | 36/36 |
 
-[Live demo](#live-demo) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in one command](#install-in-one-command) · [How it works](#how-it-works) · [Comparison](docs/COMPARISON.md) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
+[Demo video](https://youtu.be/jwso6cm9fqY) · [Benchmark](#benchmark-claude-code-same-model-same-tasks) · [Install in one command](#install-in-one-command) · [How it works](#how-it-works) · [Comparison](docs/COMPARISON.md) · [Graph model](#graph-data-model) · [Cypher](docs/CYPHER.md)
 
 </div>
 
@@ -235,11 +235,11 @@ One graph per repository (`engram:<owner>-<repo>`). Multi-tenancy is by graph, n
 Indexes: range on ids and paths; full-text on `File.terms`, `Lesson.text`, `Session.task`, `Commit.msg`, `Symbol.terms/bodyTerms`.
 Every query the product depends on, and the algorithms it uses, are in **[docs/CYPHER.md](docs/CYPHER.md)**.
 
-## Live demo
+## Demo
 
-<!-- DEMO_LINKS -->
+**Video (2 min):** https://youtu.be/jwso6cm9fqY
 
-The dashboard shows:
+The dashboard (run it with the command under [Run it locally](#run-it-locally)) shows:
 - **Ask the graph:** type a task; see the pack and *why* each item is in it, as a graph.
 - **Blast radius:** callers, the tests that reach a symbol, co-changed files and owners.
 - **Memory and agents:** live edit claims, learned verify commands, lessons, every agent session.
@@ -275,5 +275,6 @@ npx tsx bench/report.ts bench/results/claude-*.jsonl
     handoffs, and one graph per repo.
   - **03:** who owns and knows what (authorship), decisions traced to their source commits, co-change coupling,
     and knowledge kept current through incremental re-indexing on every edit.
+- **AI assistance:** I used Claude Code as a coding assistant while building Engram.
 
 MIT licensed.
