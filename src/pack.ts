@@ -127,6 +127,11 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   // Code search query: task words + their stems/abbreviations + words of identifiers written in the task.
   const idWords = ids.flatMap((i) => terms(i).split(" ")).filter((w) => w.length > 1);
   const codeWords = [...new Set([...kwStems, ...idWords.map(stem)])].filter((w) => w.length > 1);
+  // In a multi-line report (an issue: title, then description) the title is the most specific line, so its words
+  // count double; otherwise a long description's common words outvote one rare word in the title.
+  const lines = task.trim().split("\n").filter((l) => l.trim());
+  const titleStems = new Set(lines.length > 1 ? expandAbbrev(keywords(lines[0])).map(stem) : []);
+  const tw = (k: string) => (titleStems.has(k) ? 2 : 1);
   const [exact, codeHits, ftFile, past, lessons, nameHits] = await Promise.all([
     ids.length
       ? g.read<{ id: string; name: string }>("pack.exact", "MATCH (s:Symbol) WHERE s.name IN $ids RETURN s.id AS id, s.name AS name LIMIT 40", { ids })
@@ -198,7 +203,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   }
   const named = nameHits
     .map((r) => {
-      const base = r.df.reduce((a, df) => a + idf(df) ** NAME_POW, 0);
+      const base = r.df.reduce((a, df, i) => a + tw(r.hits[i]) * idf(df) ** NAME_POW, 0);
       return { ...r, s: base / Math.sqrt(groupSize.get([...r.hits].sort().join("+"))!) };
     })
     .sort((a, b) => b.s - a.s)
@@ -216,7 +221,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   // Coordinate match: rare task words used in the body count most; length is damped only mildly,
   // because the big functions are where bugs usually live.
   const code = codeHits
-    .map((r) => ({ ...r, s: r.df.reduce((a, df) => a + idf(df) ** CODE_POW, 0) / (1 + 0.15 * Math.log(1 + r.len / 200)) }))
+    .map((r) => ({ ...r, s: r.df.reduce((a, df, i) => a + tw(r.hits[i]) * idf(df) ** CODE_POW, 0) / (1 + 0.15 * Math.log(1 + r.len / 200)) }))
     .sort((a, b) => b.s - a.s)
     .slice(0, 15);
   const maxCode = Math.max(1e-9, ...code.map((r) => r.s));

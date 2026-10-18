@@ -1,0 +1,444 @@
+{
+  "yt-dlp": {
+    "n": 30,
+    "skipped": 3,
+    "top10": 17,
+    "shownInMap": 17,
+    "fileTop3": 17,
+    "medianMs": 239,
+    "rows": [
+      {
+        "issue": "16876",
+        "title": "Test failures with yt-dlp 2026.03.17 and Python 3.15.0b2",
+        "gold": [
+          "yt_dlp/extractor/youtube/pot/_director.py#clean_pot"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 246
+      },
+      {
+        "issue": "16877",
+        "title": "[reddit] Download requires new javascript challenge or resulting cookie (Error: \"Account authentication is required\", or, failed to parse JSON)",
+        "gold": [
+          "yt_dlp/extractor/reddit.py#RedditIE",
+          "yt_dlp/extractor/reddit.py#RedditIE._perform_login",
+          "yt_dlp/extractor/reddit.py#RedditIE._real_initialize",
+          "yt_dlp/extractor/reddit.py#RedditIE._real_extract"
+        ],
+        "rank": 12,
+        "shown": 0,
+        "fileRank": 5,
+        "confidence": "medium",
+        "ms": 250
+      },
+      {
+        "issue": "16359",
+        "title": "This Old House No Longer Recognized URL",
+        "gold": [
+          "yt_dlp/extractor/thisoldhouse.py#ThisOldHouseIE"
+        ],
+        "rank": 5,
+        "shown": 5,
+        "fileRank": 4,
+        "confidence": "medium",
+        "ms": 172
+      },
+      {
+        "issue": "16674",
+        "title": "[onsen.ag] Unable to Download, 403 Forbidden",
+        "gold": [
+          "yt_dlp/extractor/onsen.py#OnsenIE",
+          "yt_dlp/extractor/onsen.py#OnsenIE._perform_login",
+          "yt_dlp/extractor/onsen.py#OnsenIE._real_extract"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 115
+      },
+      {
+        "issue": "13672",
+        "title": "iwara.tv extractors broken due to Cloudflare",
+        "gold": [
+          "yt_dlp/extractor/iwara.py#IwaraBaseIE",
+          "yt_dlp/extractor/iwara.py#IwaraBaseIE._get_user_token",
+          "yt_dlp/extractor/iwara.py#IwaraBaseIE._get_media_token",
+          "yt_dlp/extractor/iwara.py#IwaraIE._extract_formats",
+          "yt_dlp/extractor/iwara.py#IwaraIE._real_extract",
+          "yt_dlp/extractor/iwara.py#IwaraUserIE._entries",
+          "yt_dlp/extractor/iwara.py#IwaraUserIE._real_extract",
+          "yt_dlp/extractor/iwara.py#IwaraPlaylistIE._entries",
+          "yt_dlp/extractor/iwara.py#IwaraPlaylistIE._real_extract"
+        ],
+        "rank": 3,
+        "shown": 3,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 72
+      },
+      {
+        "issue": "16924",
+        "title": "[Bandcamp:weekly] Extractor error 'compiledTrack'",
+        "gold": [
+          "yt_dlp/extractor/bandcamp.py#BandcampWeeklyIE",
+          "yt_dlp/extractor/bandcamp.py#BandcampWeeklyIE._real_extract"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 84
+      },
+      {
+        "issue": "16919",
+        "title": "compat-options allow-unsafe-ext errors yt-dlp",
+        "gold": [
+          "yt_dlp/__init__.py#validate_options",
+          "yt_dlp/utils/_utils.py#_UnsafeExtensionError",
+          "yt_dlp/utils/_utils.py#_UnsafeExtensionError.sanitize_extension"
+        ],
+        "rank": 5,
+        "shown": 5,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 243
+      },
+      {
+        "issue": "16692",
+        "title": "[youtube] yt-dlp occasionally only fetches the first 100 vids of a playlist",
+        "gold": [
+          "yt_dlp/extractor/youtube/_base.py#YoutubeBaseInfoExtractor._extract_continuation",
+          "yt_dlp/extractor/youtube/_tab.py#YoutubeTabIE"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 8,
+        "confidence": "medium",
+        "ms": 130
+      },
+      {
+        "issue": "13879",
+        "title": "Cannot get videos' channel or views with --flat-playlist when getting recommended videos on home page on youtube.com",
+        "gold": [
+          "yt_dlp/extractor/youtube/_tab.py#YoutubeTabBaseInfoExtractor._extract_lockup_view_model",
+          "yt_dlp/extractor/youtube/_tab.py#YoutubeTabIE"
+        ],
+        "rank": 5,
+        "shown": 5,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 135
+      },
+      {
+        "issue": "16987",
+        "title": "MX Player broken",
+        "gold": [
+          "yt_dlp/extractor/mxplayer.py#MxplayerIE",
+          "yt_dlp/extractor/mxplayer.py#MxplayerIE._real_extract",
+          "yt_dlp/extractor/mxplayer.py#MxplayerShowIE"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 132
+      },
+      {
+        "issue": "16826",
+        "title": "[telewebion] Broken",
+        "gold": [
+          "yt_dlp/extractor/telewebion.py#TelewebionIE",
+          "yt_dlp/extractor/telewebion.py#TelewebionIE._call_graphql_api",
+          "yt_dlp/extractor/telewebion.py#TelewebionIE._real_extract"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "low",
+        "ms": 98
+      },
+      {
+        "issue": "16844",
+        "title": "[niconico] KeyError('data') on device-restricted videos",
+        "gold": [
+          "yt_dlp/extractor/niconico.py#NiconicoIE._real_extract"
+        ],
+        "rank": 14,
+        "shown": 0,
+        "fileRank": 7,
+        "confidence": "high",
+        "ms": 285
+      },
+      {
+        "issue": "13132",
+        "title": "TVIPlayer, Cant extract json data",
+        "gold": [
+          "yt_dlp/extractor/tviplayer.py#TVIPlayerIE",
+          "yt_dlp/extractor/tviplayer.py#TVIPlayerIE._real_extract"
+        ],
+        "rank": 5,
+        "shown": 5,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 172
+      },
+      {
+        "issue": "17044",
+        "title": "The uploader metadata for videos in playlists with multiple uploaders on a YouTube channel is missing",
+        "gold": [
+          "yt_dlp/extractor/youtube/_tab.py#YoutubeTabBaseInfoExtractor._extract_lockup_view_model",
+          "yt_dlp/extractor/youtube/_tab.py#YoutubeTabIE"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 272
+      },
+      {
+        "issue": "16255",
+        "title": "[svt:play] ERROR: Unable to extract video data (SVTPlay)",
+        "gold": [
+          "yt_dlp/extractor/svt.py#SVTBaseIE",
+          "yt_dlp/extractor/svt.py#SVTPlayIE._real_extract"
+        ],
+        "rank": 3,
+        "shown": 3,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 246
+      },
+      {
+        "issue": "2945",
+        "title": "arte.tv playlist does not collect videos",
+        "gold": [
+          "yt_dlp/extractor/arte.py#ArteTVPlaylistIE",
+          "yt_dlp/extractor/arte.py#ArteTVPlaylistIE._real_extract"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 244
+      },
+      {
+        "issue": "13818",
+        "title": "[WrestleUniverse VOD] no longer working as of 07.22.2025",
+        "gold": [
+          "yt_dlp/extractor/wrestleuniverse.py#WrestleUniverseBaseIE._get_formats",
+          "yt_dlp/extractor/wrestleuniverse.py#WrestleUniverseVODIE",
+          "yt_dlp/extractor/wrestleuniverse.py#WrestleUniverseVODIE._real_extract",
+          "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE",
+          "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE._real_extract"
+        ],
+        "rank": 2,
+        "shown": 2,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 213
+      },
+      {
+        "issue": "12887",
+        "title": "[BiliBili] No video formats found",
+        "gold": [
+          "yt_dlp/extractor/bilibili.py#BilibiliBaseIE.extract_formats",
+          "yt_dlp/extractor/bilibili.py#BilibiliBaseIE._download_playinfo",
+          "yt_dlp/extractor/bilibili.py#BilibiliBaseIE._get_interactive_entries",
+          "yt_dlp/extractor/bilibili.py#BiliBiliIE._real_extract",
+          "yt_dlp/extractor/bilibili.py#fetch_page",
+          "yt_dlp/extractor/bilibili.py#BiliBiliDynamicIE._real_extract"
+        ],
+        "rank": 4,
+        "shown": 4,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 274
+      },
+      {
+        "issue": "17275",
+        "title": "[Instagram] Video info extraction failed: HTTP Error 404: Not Found (with cookies)",
+        "gold": [
+          "yt_dlp/extractor/instagram.py#InstagramBaseIE"
+        ],
+        "rank": 4,
+        "shown": 4,
+        "fileRank": 2,
+        "confidence": "medium",
+        "ms": 282
+      },
+      {
+        "issue": "17403",
+        "title": "[TikTok] Unexpected response from webpage request",
+        "gold": [
+          "yt_dlp/extractor/common.py#InfoExtractor",
+          "yt_dlp/extractor/dailymotion.py#DailymotionIE",
+          "yt_dlp/extractor/dailymotion.py#DailymotionIE._generate_blockbuster_headers",
+          "yt_dlp/extractor/dailymotion.py#random_letters",
+          "yt_dlp/extractor/tiktok.py#TikTokBaseIE._extract_web_data_and_status",
+          "yt_dlp/extractor/tiktok.py#get_webpage",
+          "yt_dlp/extractor/tiktok.py#TikTokUserIE._real_extract",
+          "yt_dlp/extractor/tiktok.py#TikTokLiveIE._real_extract"
+        ],
+        "rank": 5,
+        "shown": 5,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 239
+      },
+      {
+        "issue": "16622",
+        "title": "[Tiktok] Videos intermittently downloading without sound",
+        "gold": [
+          "yt_dlp/extractor/tiktok.py#TikTokBaseIE._extract_web_formats"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 233
+      },
+      {
+        "issue": "16864",
+        "title": "bfmtv: Failed to extract video",
+        "gold": [
+          "yt_dlp/extractor/bfmtv.py#BFMTVBaseIE",
+          "yt_dlp/extractor/bfmtv.py#BFMTVBaseIE._extract_video",
+          "yt_dlp/extractor/bfmtv.py#BFMTVIE._real_extract",
+          "yt_dlp/extractor/bfmtv.py#BFMTVLiveIE",
+          "yt_dlp/extractor/bfmtv.py#BFMTVLiveIE._real_extract",
+          "yt_dlp/extractor/bfmtv.py#BFMTVArticleIE._entries"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 105
+      },
+      {
+        "issue": "17466",
+        "title": "Whyp.it changed their urls",
+        "gold": [
+          "yt_dlp/extractor/whyp.py#WhypIE",
+          "yt_dlp/extractor/whyp.py#WhypIE._real_extract"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 248
+      },
+      {
+        "issue": "17507",
+        "title": "[TedTalk] ERROR: the JSON object must be str, bytes or bytearray, not NoneType",
+        "gold": [
+          "yt_dlp/extractor/ted.py#TedTalkIE._real_extract",
+          "yt_dlp/extractor/ted.py#TedPlaylistIE"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 262
+      },
+      {
+        "issue": "17331",
+        "title": "Showroom errors with \"Unable to extract Nuxt JSON data\"",
+        "gold": [
+          "yt_dlp/extractor/showroomlive.py#ShowRoomLiveIE",
+          "yt_dlp/extractor/showroomlive.py#ShowRoomLiveIE._real_extract"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 187
+      },
+      {
+        "issue": "17543",
+        "title": "Not downloading a full season on tubi",
+        "gold": [
+          "yt_dlp/extractor/tubitv.py#TubiTvShowIE",
+          "yt_dlp/extractor/tubitv.py#TubiTvShowIE._entries"
+        ],
+        "rank": 4,
+        "shown": 4,
+        "fileRank": 3,
+        "confidence": "medium",
+        "ms": 79
+      },
+      {
+        "issue": "17506",
+        "title": "[Bandcamp:album] Unable to extract tralbum data",
+        "gold": [
+          "yt_dlp/extractor/bandcamp.py#BandcampIE",
+          "yt_dlp/extractor/bandcamp.py#BandcampIE._extract_data_attr",
+          "yt_dlp/extractor/bandcamp.py#BandcampIE._real_extract",
+          "yt_dlp/extractor/bandcamp.py#BandcampAlbumIE",
+          "yt_dlp/extractor/bandcamp.py#BandcampAlbumIE._real_extract",
+          "yt_dlp/extractor/bandcamp.py#BandcampWeeklyIE",
+          "yt_dlp/extractor/bandcamp.py#BandcampUserIE"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 170
+      },
+      {
+        "issue": "17215",
+        "title": "[GlobalPlayerAudioEpisode] Missing \"id\" field in extractor result / Global Player",
+        "gold": [
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerBaseIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerBaseIE._request_ext",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerBaseIE._extract_audio",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerLiveIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerLiveIE._real_extract",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerLivePlaylistIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerLivePlaylistIE._real_extract",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerAudioIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerAudioIE._real_extract",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerAudioEpisodeIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerAudioEpisodeIE._real_extract",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerVideoIE",
+          "yt_dlp/extractor/globalplayer.py#GlobalPlayerVideoIE._real_extract"
+        ],
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
+        "confidence": "medium",
+        "ms": 263
+      },
+      {
+        "issue": "17553",
+        "title": "[twitch:clips] An extractor error has occurred. (caused by KeyError('data')) version 2026.08.19",
+        "gold": [
+          "yt_dlp/extractor/twitch.py#TwitchBaseIE"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 9,
+        "confidence": "medium",
+        "ms": 304
+      },
+      {
+        "issue": "17585",
+        "title": "ok.ru not downloading any video",
+        "gold": [
+          "yt_dlp/extractor/odnoklassniki.py#OdnoklassnikiIE",
+          "yt_dlp/extractor/odnoklassniki.py#OdnoklassnikiIE._real_extract",
+          "yt_dlp/extractor/odnoklassniki.py#OdnoklassnikiIE._extract_desktop",
+          "yt_dlp/extractor/odnoklassniki.py#OdnoklassnikiIE._extract_mobile"
+        ],
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 0,
+        "confidence": "medium",
+        "ms": 240
+      }
+    ]
+  }
+}
