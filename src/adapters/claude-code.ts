@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { EngramSession, type SessionState } from "../core/session.js";
@@ -98,7 +98,16 @@ export async function runClaudeCodeHook() {
   const es = opened.restore(persisted);
   const rel = (p: unknown) => {
     if (typeof p !== "string") return undefined;
-    const r = path.relative(root, path.isAbsolute(p) ? p : path.join(root, p));
+    const abs = path.isAbsolute(p) ? p : path.join(root, p);
+    let r = path.relative(root, abs);
+    if (r.startsWith("..")) {
+      // A symlinked path (macOS /tmp → /private/tmp, a linked checkout): compare real paths.
+      try {
+        r = path.relative(realpathSync(root), realpathSync(existsSync(abs) ? abs : path.dirname(abs)) + (existsSync(abs) ? "" : path.sep + path.basename(abs)));
+      } catch {
+        return undefined;
+      }
+    }
     return r.startsWith("..") ? undefined : r.split(path.sep).join("/");
   };
   const file = rel(input.tool_input?.file_path ?? input.tool_input?.notebook_path);
