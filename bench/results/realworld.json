@@ -2,10 +2,10 @@
   "yt-dlp": {
     "n": 30,
     "skipped": 3,
-    "top10": 17,
-    "shownInMap": 17,
-    "fileTop3": 17,
-    "medianMs": 239,
+    "top10": 20,
+    "shownInMap": 16,
+    "fileTop3": 22,
+    "medianMs": 238,
     "rows": [
       {
         "issue": "16876",
@@ -17,7 +17,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 246
+        "ms": 243
       },
       {
         "issue": "16877",
@@ -28,11 +28,11 @@
           "yt_dlp/extractor/reddit.py#RedditIE._real_initialize",
           "yt_dlp/extractor/reddit.py#RedditIE._real_extract"
         ],
-        "rank": 12,
+        "rank": 10,
         "shown": 0,
         "fileRank": 5,
         "confidence": "medium",
-        "ms": 250
+        "ms": 251
       },
       {
         "issue": "16359",
@@ -40,11 +40,11 @@
         "gold": [
           "yt_dlp/extractor/thisoldhouse.py#ThisOldHouseIE"
         ],
-        "rank": 5,
-        "shown": 5,
-        "fileRank": 4,
+        "rank": 2,
+        "shown": 2,
+        "fileRank": 2,
         "confidence": "medium",
-        "ms": 172
+        "ms": 168
       },
       {
         "issue": "16674",
@@ -54,11 +54,11 @@
           "yt_dlp/extractor/onsen.py#OnsenIE._perform_login",
           "yt_dlp/extractor/onsen.py#OnsenIE._real_extract"
         ],
-        "rank": 0,
-        "shown": 0,
-        "fileRank": 0,
+        "rank": 2,
+        "shown": 2,
+        "fileRank": 2,
         "confidence": "medium",
-        "ms": 115
+        "ms": 116
       },
       {
         "issue": "13672",
@@ -78,7 +78,7 @@
         "shown": 3,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 72
+        "ms": 76
       },
       {
         "issue": "16924",
@@ -91,7 +91,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 84
+        "ms": 80
       },
       {
         "issue": "16919",
@@ -101,11 +101,11 @@
           "yt_dlp/utils/_utils.py#_UnsafeExtensionError",
           "yt_dlp/utils/_utils.py#_UnsafeExtensionError.sanitize_extension"
         ],
-        "rank": 5,
-        "shown": 5,
-        "fileRank": 3,
+        "rank": 0,
+        "shown": 0,
+        "fileRank": 1,
         "confidence": "medium",
-        "ms": 243
+        "ms": 242
       },
       {
         "issue": "16692",
@@ -118,7 +118,7 @@
         "shown": 0,
         "fileRank": 8,
         "confidence": "medium",
-        "ms": 130
+        "ms": 135
       },
       {
         "issue": "13879",
@@ -131,7 +131,7 @@
         "shown": 5,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 135
+        "ms": 137
       },
       {
         "issue": "16987",
@@ -145,7 +145,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 132
+        "ms": 131
       },
       {
         "issue": "16826",
@@ -158,8 +158,8 @@
         "rank": 1,
         "shown": 1,
         "fileRank": 1,
-        "confidence": "low",
-        "ms": 98
+        "confidence": "medium",
+        "ms": 97
       },
       {
         "issue": "16844",
@@ -167,11 +167,11 @@
         "gold": [
           "yt_dlp/extractor/niconico.py#NiconicoIE._real_extract"
         ],
-        "rank": 14,
+        "rank": 15,
         "shown": 0,
-        "fileRank": 7,
+        "fileRank": 10,
         "confidence": "high",
-        "ms": 285
+        "ms": 295
       },
       {
         "issue": "13132",
@@ -180,11 +180,11 @@
           "yt_dlp/extractor/tviplayer.py#TVIPlayerIE",
           "yt_dlp/extractor/tviplayer.py#TVIPlayerIE._real_extract"
         ],
-        "rank": 5,
-        "shown": 5,
+        "rank": 4,
+        "shown": 4,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 172
+        "ms": 169
       },
       {
         "issue": "17044",
@@ -197,7 +197,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 272
+        "ms": 271
       },
       {
         "issue": "16255",
@@ -210,7 +210,7 @@
         "shown": 3,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 246
+        "ms": 245
       },
       {
         "issue": "2945",
@@ -219,11 +219,11 @@
           "yt_dlp/extractor/arte.py#ArteTVPlaylistIE",
           "yt_dlp/extractor/arte.py#ArteTVPlaylistIE._real_extract"
         ],
-        "rank": 0,
-        "shown": 0,
-        "fileRank": 0,
+        "rank": 1,
+        "shown": 1,
+        "fileRank": 1,
         "confidence": "medium",
-        "ms": 244
+        "ms": 240
       },
       {
         "issue": "13818",
@@ -235,11 +235,11 @@
           "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE",
           "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE._real_extract"
         ],
-        "rank": 2,
-        "shown": 2,
+        "rank": 7,
+        "shown": 0,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 213
+        "ms": 215
       },
       {
         "issue": "12887",
@@ -252,11 +252,11 @@
           "yt_dlp/extractor/bilibili.py#fetch_page",
           "yt_dlp/extractor/bilibili.py#BiliBiliDynamicIE._real_extract"
         ],
-        "rank": 4,
-        "shown": 4,
+        "rank": 3,
+        "shown": 3,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 274
+        "ms": 263
       },
       {
         "issue": "17275",
@@ -264,11 +264,11 @@
         "gold": [
           "yt_dlp/extractor/instagram.py#InstagramBaseIE"
         ],
-        "rank": 4,
-        "shown": 4,
-        "fileRank": 2,
+        "rank": 7,
+        "shown": 0,
+        "fileRank": 3,
         "confidence": "medium",
-        "ms": 282
+        "ms": 277
       },
       {
         "issue": "17403",
@@ -283,9 +283,9 @@
           "yt_dlp/extractor/tiktok.py#TikTokUserIE._real_extract",
           "yt_dlp/extractor/tiktok.py#TikTokLiveIE._real_extract"
         ],
-        "rank": 5,
-        "shown": 5,
-        "fileRank": 1,
+        "rank": 8,
+        "shown": 0,
+        "fileRank": 2,
         "confidence": "medium",
         "ms": 239
       },
@@ -316,7 +316,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 105
+        "ms": 103
       },
       {
         "issue": "17466",
@@ -325,11 +325,11 @@
           "yt_dlp/extractor/whyp.py#WhypIE",
           "yt_dlp/extractor/whyp.py#WhypIE._real_extract"
         ],
-        "rank": 0,
-        "shown": 0,
-        "fileRank": 0,
+        "rank": 2,
+        "shown": 2,
+        "fileRank": 2,
         "confidence": "medium",
-        "ms": 248
+        "ms": 251
       },
       {
         "issue": "17507",
@@ -342,7 +342,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 262
+        "ms": 255
       },
       {
         "issue": "17331",
@@ -355,7 +355,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 187
+        "ms": 183
       },
       {
         "issue": "17543",
@@ -368,7 +368,7 @@
         "shown": 4,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 79
+        "ms": 81
       },
       {
         "issue": "17506",
@@ -386,7 +386,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 170
+        "ms": 169
       },
       {
         "issue": "17215",
@@ -406,11 +406,11 @@
           "yt_dlp/extractor/globalplayer.py#GlobalPlayerVideoIE",
           "yt_dlp/extractor/globalplayer.py#GlobalPlayerVideoIE._real_extract"
         ],
-        "rank": 1,
-        "shown": 1,
-        "fileRank": 1,
+        "rank": 2,
+        "shown": 2,
+        "fileRank": 2,
         "confidence": "medium",
-        "ms": 263
+        "ms": 264
       },
       {
         "issue": "17553",
@@ -420,7 +420,7 @@
         ],
         "rank": 0,
         "shown": 0,
-        "fileRank": 9,
+        "fileRank": 2,
         "confidence": "medium",
         "ms": 304
       },
@@ -437,7 +437,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 240
+        "ms": 238
       }
     ]
   }
