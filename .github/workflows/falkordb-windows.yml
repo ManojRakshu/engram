@@ -112,6 +112,12 @@ jobs:
           mkdir -p $d
           cp redis-$REDIS_VERSION/src/redis-server.exe redis-$REDIS_VERSION/src/redis-cli.exe $d/
           cp fdb/bin/linux-x64-release/falkordb.so $d/
+          strip --strip-debug $d/falkordb.so # debug info only; the symbol table stays
+          objdump -p $d/falkordb.so | grep -E "^Magic|SizeOfImage|DLL Name" || true
+          # Does it load at all (Cygwin on PATH)? Separates a bad DLL from a missing dependency.
+          ($d/redis-server.exe --port 6391 --save "" --loadmodule "$(pwd)/$d/falkordb.so" > cyg-load.log 2>&1 &)
+          sleep 5; $d/redis-cli.exe -p 6391 MODULE LIST || true; $d/redis-cli.exe -p 6391 SHUTDOWN NOSAVE || true
+          cat cyg-load.log | tail -5
           for f in $d/*.exe $d/falkordb.so; do cygcheck "$(cygpath -w "$f")"; done \
             | tr -d '\r' | sed 's/^ *//' | grep -i '\\cygwin\\bin\\' | sort -u | while read -r w; do cp "$(cygpath -u "$w")" $d/; done
           ls -la $d
