@@ -1,0 +1,4 @@
+#!/bin/sh
+out="${PROBE_OUT:-/tmp/probe-out}"
+mkdir -p "$out"
+cat > "$out/$1-$$.json"

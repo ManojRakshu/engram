@@ -51,7 +51,7 @@ jobs:
           cargo +nightly update -p libc
           $out = "$env:GITHUB_WORKSPACE/fdb/bin/linux-x64-release/FalkorDB-core-rs"
           $env:RUSTFLAGS = "--print native-static-libs"
-          cargo +nightly build -Zbuild-std=std,panic_abort --target x86_64-pc-cygwin --release --features falkordb_allocator --target-dir "$out/cyg"
+          cargo +nightly build "-Zbuild-std=std,panic_abort" --target x86_64-pc-cygwin --release --features falkordb_allocator --target-dir "$out/cyg"
           New-Item -ItemType Directory -Force "$out/release" | Out-Null
           Copy-Item "$out/cyg/x86_64-pc-cygwin/release/libFalkorDB_rs.a" "$out/release/"
 

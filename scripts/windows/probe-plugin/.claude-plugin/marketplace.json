@@ -1,0 +1,1 @@
+{ "name": "probe", "owner": { "name": "probe" }, "plugins": [{ "name": "probe", "source": "./plugin", "description": "hook form probe" }] }
