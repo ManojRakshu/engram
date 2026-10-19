@@ -29,6 +29,12 @@ jobs:
           claude plugin marketplace add "$env:GITHUB_WORKSPACE\scripts\windows\probe-plugin"
           claude plugin install probe@probe
           claude plugin list
+      - name: MCP launch forms
+        env:
+          PROBE_OUT: ${{ runner.temp }}\probe-out
+        run: |
+          claude mcp list 2>&1
+          Get-ChildItem $env:PROBE_OUT -Filter "MCP-*" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }
       - name: Run Claude Code against a scripted API
         env:
           ANTHROPIC_BASE_URL: http://127.0.0.1:8787
@@ -47,7 +53,7 @@ jobs:
           Get-Content "$env:RUNNER_TEMP\mock.log"
           "---- notes.txt"; Get-Content "$repo\notes.txt"
           "---- hook outputs"
-          Get-ChildItem $env:PROBE_OUT | ForEach-Object { "== $($_.Name)"; Get-Content $_.FullName }
+          Get-ChildItem $env:PROBE_OUT | ForEach-Object { "== $($_.Name)"; Get-Content $_.FullName | ConvertFrom-Json | ConvertTo-Json -Depth 6 -Compress | ForEach-Object { $_ -split '(?<=,)"' } }
           "---- claude log (hook lines)"
           Select-String -Path "$env:RUNNER_TEMP\claude.log" -Pattern "hook|Hook|ENOENT|spawn" | Select-Object -First 80 | ForEach-Object { $_.Line }
       - uses: actions/upload-artifact@v4

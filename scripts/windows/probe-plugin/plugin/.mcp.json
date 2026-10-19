@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "m-sh": { "command": "${CLAUDE_PLUGIN_ROOT}/bin/probe-mcp-sh", "args": ["sh"] },
+    "m-cmd": { "command": "${CLAUDE_PLUGIN_ROOT}/bin/probe-mcp.cmd", "args": ["cmd"] },
+    "m-noext-cmd": { "command": "${CLAUDE_PLUGIN_ROOT}/bin/probe-mcp", "args": ["noext"] },
+    "m-node": { "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/bin/probe-mcp.cjs", "node"] }
+  }
+}
