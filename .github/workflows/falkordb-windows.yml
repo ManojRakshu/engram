@@ -43,7 +43,7 @@ jobs:
         with:
           packages: >-
             gcc-core gcc-g++ make cmake autoconf automake libtool pkg-config m4
-            libssl-devel zlib-devel python3 git zip patch wget curl
+            libssl-devel zlib-devel python3 git zip patch wget curl gdb
 
       - name: Restore build cache
         uses: actions/cache/restore@v4
@@ -123,6 +123,17 @@ jobs:
           ls -la $d
           zip -q -r $d.zip $d
           sha256sum $d.zip | tee $d.zip.sha256
+
+      - name: Backtrace of the full-text index call (gdb)
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          export PATH=/usr/local/bin:/usr/bin:/bin
+          d=falkordb-windows-x64
+          so="$(pwd)/fdb/bin/linux-x64-release/falkordb.so" # unstripped, with debug info
+          printf '%s\n' "set pagination off" "handle SIGSEGV stop print" "run" "bt 40" "info registers rip" "x/8i \$pc-16" "continue" "bt 40" "kill" > gdb.cmds
+          (sleep 8; $d/redis-cli.exe -p 6392 GRAPH.QUERY g "CREATE (:S {name:'f'})"; $d/redis-cli.exe -p 6392 GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('S', 'name')"; sleep 20; $d/redis-cli.exe -p 6392 SHUTDOWN NOSAVE) &
+          timeout 300 gdb -batch -x gdb.cmds --args $d/redis-server.exe --port 6392 --save "" --loadmodule "$so" 2>&1 | grep -v "^\[New Thread\|^\[Thread .* exited" | tail -120
 
       - name: Smoke test (plain Windows, no Cygwin on PATH)
         shell: pwsh
