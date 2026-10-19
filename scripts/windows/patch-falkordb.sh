@@ -17,5 +17,7 @@ patch("CMakeLists.txt", '    else()\n        target_link_options(${TARGET} PRIVA
       '    elseif(NOT CYGWIN)\n        target_link_options(${TARGET} PRIVATE "-Wl,--enable-new-dtags"')
 patch("CMakeLists.txt", "if(NOT APPLE)\n    set(CMAKE_SHARED_LINKER_FLAGS \"${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic",
       "if(NOT APPLE AND NOT CYGWIN)\n    set(CMAKE_SHARED_LINKER_FLAGS \"${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic")
+# Cygwin's <ctype.h> macros index a table with a char; libcypher-parser builds with -Werror.
+patch("build.sh", 'CFLAGS="-fPIC -O3 -g -DYY_BUFFER_SIZE=1048576"', 'CFLAGS="-fPIC -O3 -g -DYY_BUFFER_SIZE=1048576 -Wno-char-subscripts"')
 print("patched")
 PY
