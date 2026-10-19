@@ -363,13 +363,13 @@ footer p{margin:6px 0}
 
 <div class="install" id="get">
   <div class="tabs" role="tablist" aria-label="Install options">
-    <button role="tab" aria-selected="true" aria-controls="p-sh" id="t-sh">macOS · Linux</button>
+    <button role="tab" aria-selected="true" aria-controls="p-sh" id="t-sh">macOS · Linux · WSL2</button>
     <button role="tab" aria-selected="false" aria-controls="p-mcp" id="t-mcp">Any MCP client</button>
     <button role="tab" aria-selected="false" aria-controls="p-team" id="t-team">Shared FalkorDB</button>
   </div>
   <div class="panel" id="p-sh" role="tabpanel" aria-labelledby="t-sh">
     <div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh</code><button type="button" data-copy>COPY</button></div>
-    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.</p>
+    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing. On Windows, run it inside WSL2 (Ubuntu 24.04+); there is no native Windows build yet.</p>
   </div>
   <div class="panel" id="p-mcp" role="tabpanel" aria-labelledby="t-mcp" hidden>
     <div class="cmd"><code class="json">{ "mcpServers": { "engram": { "command": "~/.engram/app/plugin/bin/engram", "args": ["mcp"] } } }</code><button type="button" data-copy>COPY</button></div>
