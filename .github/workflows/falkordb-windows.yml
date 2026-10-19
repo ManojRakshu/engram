@@ -1,0 +1,138 @@
+# Builds FalkorDB + Redis as native Windows binaries (Cygwin runtime), so Engram can run
+# the same embedded setup on Windows that FalkorDBLite gives it on macOS and Linux.
+name: falkordb-windows
+
+on:
+  push:
+    branches: [windows]
+    paths: [.github/workflows/falkordb-windows.yml, scripts/windows/**]
+  workflow_dispatch:
+
+env:
+  FALKORDB_TAG: v4.18.3
+  REDIS_VERSION: 8.6.2
+  PEG_VERSION: 0.1.20
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail -o igncr '{0}'
+    steps:
+      - run: git config --global core.autocrlf false
+        shell: pwsh
+
+      - uses: actions/checkout@v4
+
+      - name: Clone FalkorDB
+        shell: pwsh
+        run: git clone --depth 1 --branch $env:FALKORDB_TAG --recurse-submodules --shallow-submodules https://github.com/FalkorDB/FalkorDB.git fdb
+
+      - uses: cygwin/cygwin-install-action@v4
+        with:
+          packages: >-
+            gcc-core gcc-g++ make cmake autoconf automake libtool pkg-config m4
+            libssl-devel zlib-devel python3 git zip patch wget curl
+
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
+        with:
+          path: fdb/bin
+          key: fdb-bin-${{ env.FALKORDB_TAG }}-${{ github.run_id }}
+          restore-keys: fdb-bin-${{ env.FALKORDB_TAG }}-
+
+      - name: Rust part (x86_64-pc-cygwin, nightly + build-std)
+        shell: pwsh
+        run: |
+          rustup toolchain install nightly --profile minimal --component rust-src
+          cd fdb/deps/FalkorDB-core-rs
+          cargo +nightly update -p libc
+          $out = "$env:GITHUB_WORKSPACE/fdb/bin/linux-x64-release/FalkorDB-core-rs"
+          $env:RUSTFLAGS = "--print native-static-libs"
+          cargo +nightly build -Zbuild-std=std,panic_abort --target x86_64-pc-cygwin --release --features falkordb_allocator --target-dir "$out/cyg"
+          New-Item -ItemType Directory -Force "$out/release" | Out-Null
+          Copy-Item "$out/cyg/x86_64-pc-cygwin/release/libFalkorDB_rs.a" "$out/release/"
+
+      - name: peg/leg (parser generator for libcypher-parser)
+        run: |
+          export PATH=/usr/local/bin:/usr/bin:/bin
+          cd /tmp
+          curl -fsSL https://www.piumarta.com/software/peg/peg-$PEG_VERSION.tar.gz | tar xz
+          cd peg-$PEG_VERSION && make && make install PREFIX=/usr/local
+          which leg
+
+      - name: Build FalkorDB module
+        run: |
+          export PATH=/usr/local/bin:/usr/bin:/bin
+          cd fdb
+          bash ../scripts/windows/patch-falkordb.sh
+          ./build.sh GCC=1 JIT=0 VERBOSE=1
+          ls -la bin/linux-x64-release/falkordb.so
+
+      - name: Save build cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: fdb/bin
+          key: fdb-bin-${{ env.FALKORDB_TAG }}-${{ github.run_id }}
+
+      - name: Build Redis
+        run: |
+          export PATH=/usr/local/bin:/usr/bin:/bin
+          sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h
+          curl -fsSL https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz | tar xz
+          cd redis-$REDIS_VERSION
+          sed -i 's/all: \(.*\) module_tests$/all: \1/' src/Makefile
+          make CFLAGS="-Wno-char-subscripts -O0" -j$(nproc)
+
+      - name: Package
+        run: |
+          export PATH=/usr/local/bin:/usr/bin:/bin
+          d=falkordb-windows-x64
+          mkdir -p $d
+          cp redis-$REDIS_VERSION/src/redis-server.exe redis-$REDIS_VERSION/src/redis-cli.exe $d/
+          cp fdb/bin/linux-x64-release/falkordb.so $d/
+          for f in $d/*.exe $d/falkordb.so; do cygcheck "$(cygpath -w "$f")"; done \
+            | tr -d '\r' | sed 's/^ *//' | grep -i '\\cygwin\\bin\\' | sort -u | while read -r w; do cp "$(cygpath -u "$w")" $d/; done
+          ls -la $d
+          zip -q -r $d.zip $d
+          sha256sum $d.zip | tee $d.zip.sha256
+
+      - name: Smoke test (plain Windows, no Cygwin on PATH)
+        shell: pwsh
+        run: |
+          $env:PATH = "C:\Windows\System32;C:\Windows"
+          $d = "$env:GITHUB_WORKSPACE\falkordb-windows-x64"
+          & "$d\redis-server.exe" --version
+          $p = Start-Process -PassThru -NoNewWindow -FilePath "$d\redis-server.exe" -ArgumentList "--port 6390 --bind 127.0.0.1 --save """" --dir $env:RUNNER_TEMP --loadmodule falkordb.so" -WorkingDirectory $d
+          Start-Sleep -Seconds 4
+          $cli = "$d\redis-cli.exe"
+          & $cli -p 6390 MODULE LIST
+          & $cli -p 6390 GRAPH.QUERY g "CREATE (:File {path:'a.py'})-[:DEFINES]->(:Symbol {name:'f'})-[:CALLS]->(:Symbol {name:'g'})"
+          $r = & $cli -p 6390 GRAPH.QUERY g "MATCH (:File)-[:DEFINES]->(s)-[:CALLS*1..2]->(t) RETURN s.name, t.name"
+          $r
+          if (-not ($r -match 'g')) { throw "graph query failed" }
+          & $cli -p 6390 GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('Symbol', 'name')"
+          & $cli -p 6390 GRAPH.QUERY g "CALL db.idx.fulltext.queryNodes('Symbol', 'f') YIELD node RETURN node.name"
+          & $cli -p 6390 GRAPH.QUERY g "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score RETURN node.name, score"
+          & $cli -p 6390 BGSAVE
+          Start-Sleep -Seconds 4
+          & $cli -p 6390 LASTSAVE
+          & $cli -p 6390 SHUTDOWN SAVE
+          Start-Sleep -Seconds 2
+          $p2 = Start-Process -PassThru -NoNewWindow -FilePath "$d\redis-server.exe" -ArgumentList "--port 6390 --bind 127.0.0.1 --dir $env:RUNNER_TEMP --loadmodule falkordb.so" -WorkingDirectory $d
+          Start-Sleep -Seconds 4
+          $r2 = & $cli -p 6390 GRAPH.QUERY g "MATCH (s)-[:CALLS]->(t) RETURN count(*)"
+          $r2
+          if (-not ($r2 -match '^1$')) { throw "graph not restored from RDB" }
+          & $cli -p 6390 SHUTDOWN NOSAVE
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: falkordb-windows-x64
+          path: |
+            falkordb-windows-x64.zip
+            falkordb-windows-x64.zip.sha256
