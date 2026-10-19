@@ -77,6 +77,12 @@ jobs:
           export PATH=/usr/local/bin:/usr/bin:/bin
           cd fdb
           bash ../scripts/windows/patch-falkordb.sh
+          # A dependency that failed last time left a configured build dir behind (cached): start it clean.
+          d=bin/linux-x64-release
+          [ -f $d/libcypher-parser/lib/src/.libs/libcypher-parser.a ] || rm -rf $d/libcypher-parser
+          [ -f $d/GraphBLAS/libgraphblas.a ] || rm -rf $d/GraphBLAS
+          [ -f $d/LAGraph/src/liblagraph.a ] || rm -rf $d/LAGraph
+          [ -f $d/oniguruma/libonig.a ] || rm -rf $d/oniguruma
           ./build.sh GCC=1 JIT=0 VERBOSE=1
           ls -la bin/linux-x64-release/falkordb.so
 
