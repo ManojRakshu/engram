@@ -40,5 +40,8 @@ patch("deps/RediSearch/deps/VectorSimilarity/cmake/cpu_features.cmake",
 # quickjs: Cygwin declares malloc_usable_size in <malloc.h>, which quickjs only includes on Linux.
 patch("deps/quickjs/quickjs.c", "#elif defined(__linux__) || defined(__GLIBC__)\n#include <malloc.h>",
       "#elif defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)\n#include <malloc.h>")
+# RediSearch's readies helper adds the same ELF-only flags to its own shared build.
+patch("deps/RediSearch/deps/readies/cmake/cc", '    add_target_linker_flags(${TARGET} "-Wl,--enable-new-dtags -Wl,-rpath,\\$ORIGIN")',
+      '    if (NOT CYGWIN)\n        add_target_linker_flags(${TARGET} "-Wl,--enable-new-dtags -Wl,-rpath,\\$ORIGIN")\n    endif()')
 print("patched")
 PY
