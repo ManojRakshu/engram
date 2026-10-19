@@ -55,10 +55,11 @@ jobs:
       - name: Rust part (x86_64-pc-cygwin, nightly + build-std)
         shell: pwsh
         run: |
+          $out = "$env:GITHUB_WORKSPACE/fdb/bin/linux-x64-release/FalkorDB-core-rs"
+          if (Test-Path "$out/release/libFalkorDB_rs.a") { "cached"; exit 0 }
           rustup toolchain install nightly --profile minimal --component rust-src
           cd fdb/deps/FalkorDB-core-rs
           cargo +nightly update -p libc
-          $out = "$env:GITHUB_WORKSPACE/fdb/bin/linux-x64-release/FalkorDB-core-rs"
           $env:RUSTFLAGS = "--print native-static-libs"
           cargo +nightly build "-Zbuild-std=std,panic_abort" --target x86_64-pc-cygwin --release --features falkordb_allocator --target-dir "$out/cyg"
           New-Item -ItemType Directory -Force "$out/release" | Out-Null
@@ -75,6 +76,8 @@ jobs:
       - name: Build FalkorDB module
         run: |
           export PATH=/usr/local/bin:/usr/bin:/bin
+          # Cygwin ships CMake 4, which rejects cmake_minimum_required(< 3.5) in older deps (cpu_features).
+          export CMAKE_POLICY_VERSION_MINIMUM=3.5
           cd fdb
           bash ../scripts/windows/patch-falkordb.sh
           # A dependency that failed last time left a configured build dir behind (cached): start it clean.
