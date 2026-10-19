@@ -4,12 +4,19 @@
 SELF="$0" # follow the ~/.local/bin/engram link back to the checkout
 while [ -L "$SELF" ]; do L="$(readlink "$SELF")"; case "$L" in /*) SELF="$L" ;; *) SELF="$(dirname "$SELF")/$L" ;; esac; done
 DIR="$(cd "$(dirname "$SELF")/.." && pwd)"
+case "$(uname -s)" in MINGW* | MSYS* | CYGWIN*) WIN=1 ;; *) WIN= ;; esac
+[ -n "$WIN" ] && DIR="$(cd "$DIR" && pwd -W)" # Git Bash on Windows: node.exe wants C:/ paths
 export ENGRAM_WASM_DIR="$DIR/dist"
 NODE_VER=v22.23.1
 EH="${ENGRAM_HOME:-$HOME/.engram}"
 NODE="${ENGRAM_NODE:-}"
 [ -z "$NODE" ] && [ -x "$EH/node-$NODE_VER/bin/node" ] && NODE="$EH/node-$NODE_VER/bin/node"
+[ -z "$NODE" ] && [ -n "$WIN" ] && [ -f "$EH/node-$NODE_VER/node.exe" ] && NODE="$EH/node-$NODE_VER/node.exe"
 [ -z "$NODE" ] && NODE="$(command -v node)"
+if [ -z "$NODE" ] && [ -n "$WIN" ]; then
+  mkdir -p "$EH" && powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$DIR/bin/fetch-node.ps1" "$(cd "$EH" && pwd -W)" >&2 || exit 1
+  NODE="$EH/node-$NODE_VER/node.exe"
+fi
 if [ -z "$NODE" ]; then
   case "$(uname -s)-$(uname -m)" in
     Darwin-arm64) P=darwin-arm64 ;; Darwin-x86_64) P=darwin-x64 ;;

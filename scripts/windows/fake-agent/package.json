@@ -1,0 +1,1 @@
+{ "name": "fake-agent", "version": "1.0.0", "bin": { "fake-agent": "index.js" } }

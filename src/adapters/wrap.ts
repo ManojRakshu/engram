@@ -1,4 +1,6 @@
 import { execFileSync, spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { EngramSession } from "../core/session.js";
 
 /**
@@ -24,7 +26,7 @@ export async function runWrapped(task: string, command: string[]) {
 
   const before = changedFiles(root);
   const code = await new Promise<number>((resolve) => {
-    const p = spawn(command[0], finalArgs, { stdio: "inherit" });
+    const p = process.platform === "win32" ? spawnWindows(command[0], finalArgs) : spawn(command[0], finalArgs, { stdio: "inherit" });
     p.on("close", (c) => resolve(c ?? 1));
   });
   // What the agent touched, from git's point of view — no harness cooperation needed.
@@ -48,4 +50,25 @@ function changedFiles(root: string) {
   } catch {
     return new Set<string>();
   }
+}
+
+/**
+ * Windows can only start a real .exe directly. Most CLI agents (codex, gemini, claude via npm) are npm
+ * .cmd shims: run the node script behind the shim instead, so a multi-line prompt arrives intact.
+ * Any other .cmd/.bat goes through cmd.exe with cmd's quoting rules (it can't carry newlines).
+ */
+function spawnWindows(cmd: string, args: string[]) {
+  let found = cmd;
+  try {
+    found = execFileSync("where", [cmd], { stdio: ["ignore", "pipe", "ignore"] }).toString().split(/\r?\n/)[0].trim() || cmd;
+  } catch {
+    /* not on PATH: let spawn report it */
+  }
+  if (!/\.(cmd|bat)$/i.test(found)) return spawn(found, args, { stdio: "inherit" });
+  const shim = /"%dp0%\\([^"]+\.(?:js|cjs|mjs))"\s+%\*/i.exec(readFileSync(found, "utf8"));
+  if (shim) return spawn(process.execPath, [path.join(path.dirname(found), shim[1]), ...args], { stdio: "inherit" });
+  const meta = /([()\][%!^"`<>&|;, *?])/g;
+  const quote = (a: string) => `"${a.replace(/\r?\n/g, " ").replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, "$1$1")}"`.replace(meta, "^$1").replace(meta, "^$1");
+  const line = [found, ...args].map(quote).join(" ");
+  return spawn(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `"${line}"`], { stdio: "inherit", windowsVerbatimArguments: true });
 }

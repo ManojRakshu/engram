@@ -31,9 +31,12 @@ const require = createRequire(import.meta.url);
 const languages = new Map<Lang, Parser.Language>();
 let ready: Promise<void> | undefined;
 
+// Bundled builds (the plugin) ship the wasm files next to the bundle. The launcher says where
+// (ENGRAM_WASM_DIR); an agent that starts the bundle directly with node (Windows MCP configs) doesn't.
+const wasmDir = () => process.env.ENGRAM_WASM_DIR ?? (process.env.ENGRAM_BUNDLED ? path.dirname(process.argv[1] ?? "") : undefined);
+
 async function init() {
-  // Bundled builds (the Claude Code plugin) ship the wasm files next to the bundle: ENGRAM_WASM_DIR.
-  const bundled = process.env.ENGRAM_WASM_DIR;
+  const bundled = wasmDir();
   const runtime = bundled ? path.join(bundled, "tree-sitter.wasm") : undefined;
   // web-tree-sitter (and its wasm runtime) is only loaded when a file actually needs parsing.
   const Parser = (await import("web-tree-sitter")).default;
@@ -45,7 +48,7 @@ async function init() {
 async function grammar(l: Lang) {
   let lang = languages.get(l);
   if (!lang) {
-    const dir = process.env.ENGRAM_WASM_DIR ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
+    const dir = wasmDir() ?? path.join(path.dirname(require.resolve("tree-sitter-wasms/package.json")), "out");
     lang = await ParserCtor.Language.load(path.join(dir, `tree-sitter-${l}.wasm`));
     languages.set(l, lang);
   }

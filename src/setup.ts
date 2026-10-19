@@ -55,7 +55,7 @@ function jsonServers(file: string, key: string, entry: unknown, remove: boolean)
   return remove ? `removed from ${file}` : `added to ${file}`;
 }
 
-function codexToml(file: string, bin: string, remove: boolean) {
+function codexToml(file: string, mcp: { command: string; args: string[] }, remove: boolean) {
   const text = existsSync(file) ? readFileSync(file, "utf8") : "";
   const block = /\n?\[mcp_servers\.engram\]\n(?:(?!\[)[^\n]*\n?)*/;
   if (remove) {
@@ -64,12 +64,19 @@ function codexToml(file: string, bin: string, remove: boolean) {
     return `removed from ${file}`;
   }
   if (block.test(text)) return "already configured";
-  writeFileSync(file, `${text.replace(/\n*$/, "\n")}\n[mcp_servers.engram]\ncommand = ${JSON.stringify(bin)}\nargs = ["mcp"]\n`);
+  writeFileSync(file, `${text.replace(/\n*$/, "\n")}\n[mcp_servers.engram]\ncommand = ${JSON.stringify(mcp.command)}\nargs = ${JSON.stringify(mcp.args)}\n`);
   return `added to ${file}`;
 }
 
 function claudeCode(root: string, remove: boolean) {
-  const cc = (...a: string[]) => execFileSync("claude", a, { stdio: ["ignore", "pipe", "pipe"], timeout: 60_000 }).toString();
+  // Windows: the native install is claude.exe, an npm install is a claude.cmd shim that needs a shell.
+  const win = process.platform === "win32" && !onPath("claude.exe");
+  const cc = (...a: string[]) =>
+    execFileSync("claude", win ? a.map((x) => (/[\s"]/.test(x) ? `"${x.replace(/"/g, '\\"')}"` : x)) : a, {
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: 60_000,
+      shell: win,
+    }).toString();
   try {
     if (remove) {
       cc("plugin", "uninstall", "engram@engram");
@@ -92,7 +99,8 @@ function claudeCode(root: string, remove: boolean) {
 export async function setup(flags: Map<string, string>, repoRoot: string, indexHere: () => Promise<string>) {
   const remove = flags.has("remove");
   const root = installRoot();
-  const bin = path.join(root, "plugin", "bin", "engram");
+  const win = process.platform === "win32";
+  const bin = path.join(root, "plugin", "bin", win ? "engram.cmd" : "engram");
   const h = os.homedir();
 
   if (!remove) {
@@ -122,16 +130,22 @@ export async function setup(flags: Map<string, string>, repoRoot: string, indexH
   }
 
   console.log("Agents");
-  const mcp = { command: bin, args: ["mcp"] };
+  // Windows: MCP clients can only start a real .exe, so they get node plus the bundle (not engram.cmd).
+  const mcp = win ? { command: process.execPath, args: [path.join(root, "plugin", "dist", "engram.mjs"), "mcp"] } : { command: bin, args: ["mcp"] };
   const agents: [string, boolean, () => string][] = [
     ["Claude Code", onPath("claude"), () => claudeCode(root, remove)],
     ["Cursor", existsSync(path.join(h, ".cursor")), () => jsonServers(path.join(h, ".cursor", "mcp.json"), "mcpServers", mcp, remove)],
-    ["Codex", existsSync(path.join(h, ".codex")), () => codexToml(path.join(h, ".codex", "config.toml"), bin, remove)],
+    ["Codex", existsSync(path.join(h, ".codex")), () => codexToml(path.join(h, ".codex", "config.toml"), mcp, remove)],
     ["Gemini CLI", existsSync(path.join(h, ".gemini")), () => jsonServers(path.join(h, ".gemini", "settings.json"), "mcpServers", mcp, remove)],
     ["Windsurf", existsSync(path.join(h, ".codeium", "windsurf")), () => jsonServers(path.join(h, ".codeium", "windsurf", "mcp_config.json"), "mcpServers", mcp, remove)],
-    ["opencode", existsSync(path.join(h, ".config", "opencode")), () => jsonServers(path.join(h, ".config", "opencode", "opencode.json"), "mcp", { type: "local", command: [bin, "mcp"], enabled: true }, remove)],
+    ["opencode", existsSync(path.join(h, ".config", "opencode")), () => jsonServers(path.join(h, ".config", "opencode", "opencode.json"), "mcp", { type: "local", command: [mcp.command, ...mcp.args], enabled: true }, remove)],
   ];
-  const vscodeUser = process.platform === "darwin" ? path.join(h, "Library", "Application Support", "Code", "User") : path.join(h, ".config", "Code", "User");
+  const vscodeUser =
+    process.platform === "darwin"
+      ? path.join(h, "Library", "Application Support", "Code", "User")
+      : win
+        ? path.join(process.env.APPDATA ?? path.join(h, "AppData", "Roaming"), "Code", "User")
+        : path.join(h, ".config", "Code", "User");
   const cline = path.join(vscodeUser, "globalStorage", "saoudrizwan.claude-dev", "settings");
   agents.push(
     ["VS Code", existsSync(vscodeUser), () => jsonServers(path.join(vscodeUser, "mcp.json"), "servers", { type: "stdio", ...mcp }, remove)],
@@ -153,7 +167,8 @@ export async function setup(flags: Map<string, string>, repoRoot: string, indexH
   }
 
   // An `engram` command, when a per-user bin directory is already on PATH. Only ever replaces our own link.
-  const onPathDir = [path.join(h, ".local", "bin"), path.join(h, "bin")].find((d) => existsSync(d) && (process.env.PATH ?? "").split(path.delimiter).includes(d));
+  // (Windows: install.ps1 puts an engram.cmd shim on the user PATH instead.)
+  const onPathDir = !win && [path.join(h, ".local", "bin"), path.join(h, "bin")].find((d) => existsSync(d) && (process.env.PATH ?? "").split(path.delimiter).includes(d));
   if (onPathDir) {
     const link = path.join(onPathDir, "engram");
     const ours = (() => {

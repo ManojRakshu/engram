@@ -145,7 +145,7 @@ async function ensureEmbedded(waitMs: number, foreground: boolean, log: (s: stri
         const cur = saved().url; // someone may have finished starting it just before we took the lock
         if (cur && (await ping(cur, 500)) === "ok") return cur;
         log("starting embedded FalkorDB…");
-        const url = spawnServer();
+        const url = await spawnServer();
         while (Date.now() < until) {
           if ((await ping(url, 500)) === "ok") {
             save({ url });

@@ -1,0 +1,122 @@
+# Engram on native Windows, end to end, the way a user gets it: install.ps1 on a machine without Node
+# on PATH, embedded FalkorDB (our Windows build), then every way an agent talks to Engram.
+name: engram-windows-e2e
+
+on:
+  push:
+    branches: [windows]
+    paths-ignore: [.github/workflows/falkordb-windows.yml, .github/workflows/claude-code-windows-probe.yml, scripts/windows/probe-plugin/**]
+  workflow_run:
+    workflows: [falkordb-windows]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  e2e:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEMO: ${{ github.workspace }}\..\demo-repo
+    steps:
+      - run: git config --global core.autocrlf true # Git for Windows' default: CRLF checkouts must not break anything
+      - uses: actions/checkout@v4
+
+      - name: FalkorDB for Windows (latest green build)
+        run: |
+          $run = gh run list -R $env:GITHUB_REPOSITORY -w falkordb-windows -s success -L 1 --json databaseId -q '.[0].databaseId'
+          gh run download $run -R $env:GITHUB_REPOSITORY -n falkordb-windows-x64 -D "$env:RUNNER_TEMP\fdb"
+          "ENGRAM_FALKORDB_ZIP=$env:RUNNER_TEMP\fdb\falkordb-windows-x64.zip" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Demo repo
+        run: ./scripts/windows/demo-repo.ps1 $env:DEMO
+
+      - name: Install (no Node on PATH, no Docker, no WSL)
+        run: |
+          git checkout -B main
+          $env:Path = ($env:Path -split ";" | Where-Object { -not (Test-Path (Join-Path $_ "node.exe")) }) -join ";"
+          if (Get-Command node -ErrorAction SilentlyContinue) { throw "node still on PATH" }
+          $env:ENGRAM_REPO = "file:///$($env:GITHUB_WORKSPACE -replace '\\','/')"
+          Push-Location $env:DEMO
+          New-Item -ItemType Directory -Force "$HOME\.cursor", "$HOME\.codex", "$HOME\.gemini" | Out-Null
+          & ([scriptblock]::Create((Get-Content -Raw "$env:GITHUB_WORKSPACE\install.ps1")))
+          if ($LASTEXITCODE) { throw "install failed" }
+          Pop-Location
+          Get-ChildItem "$HOME\.engram"
+          Get-Content "$HOME\.engram\falkordb.log" -Tail 5
+
+      - name: CLI (fresh shell, engram from the user PATH)
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
+          Push-Location $env:DEMO
+          engram pack "the discount is applied twice on the invoice total"
+          $out = (engram find apply_discount) -join "`n"; $out
+          if ($out -notmatch "billing/discount.py") { throw "find failed" }
+          engram impact billing/discount.py
+          engram why billing/discount.py
+          Pop-Location
+
+      - name: MCP, as each agent's config starts it
+        run: |
+          $node = "$HOME\.engram\node-v22.23.1\node.exe"
+          & $node scripts/windows/e2e-mcp.mjs cursor "$HOME\.cursor\mcp.json" $env:DEMO; if ($LASTEXITCODE) { throw "cursor" }
+          & $node scripts/windows/e2e-mcp.mjs codex "$HOME\.codex\config.toml" $env:DEMO; if ($LASTEXITCODE) { throw "codex" }
+          & $node scripts/windows/e2e-mcp.mjs gemini "$HOME\.gemini\settings.json" $env:DEMO; if ($LASTEXITCODE) { throw "gemini" }
+
+      - name: engram run with an npm-installed CLI agent (.cmd shim)
+        run: |
+          npm install -g ./scripts/windows/fake-agent
+          $env:FAKE_AGENT_OUT = "$env:RUNNER_TEMP\fake-agent-prompt.txt"
+          Push-Location $env:DEMO
+          & "$HOME\.engram\bin\engram.cmd" run "the discount is applied twice on the invoice total" -- fake-agent "{prompt}"
+          if ($LASTEXITCODE) { throw "engram run failed" }
+          Pop-Location
+          $p = Get-Content -Raw $env:FAKE_AGENT_OUT; $p
+          if ($p -notmatch "discount\.py" -or ($p -split "`n").Count -lt 3) { throw "the agent did not get the multi-line context" }
+          git -C $env:DEMO checkout -- .
+
+      - name: Claude Code (real CLI, scripted API) through the Engram plugin
+        env:
+          ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+          ANTHROPIC_API_KEY: sk-ant-mock
+        run: |
+          irm https://claude.ai/install.ps1 | iex
+          $env:Path = "$HOME\.local\bin;$HOME\.engram\bin;$env:Path"
+          Push-Location $env:DEMO
+          engram setup --agents claude --no-index
+          claude plugin list
+          $env:ENGRAM_HOOK_LOG = "$env:RUNNER_TEMP\hooks.jsonl"
+          $node = "$HOME\.engram\node-v22.23.1\node.exe"
+          Start-Process -NoNewWindow $node -ArgumentList "$env:GITHUB_WORKSPACE\scripts\windows\mock-anthropic.mjs", "`"$env:DEMO\billing\discount.py`"", "`"return base * (1 - pct)`"", "`"return base * (1 - clamp(pct))`"" -RedirectStandardOutput "$env:RUNNER_TEMP\mock.log"
+          Start-Sleep 2
+          claude -p "the discount is applied twice on the invoice total" --dangerously-skip-permissions --output-format json
+          Pop-Location
+          "---- mock API"; Get-Content "$env:RUNNER_TEMP\mock.log"
+          "---- hooks"; Get-Content $env:ENGRAM_HOOK_LOG
+          $events = Get-Content $env:ENGRAM_HOOK_LOG | ConvertFrom-Json
+          foreach ($e in "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop") { if (-not ($events | Where-Object event -eq $e)) { throw "hook $e never ran" } }
+          if (-not (Select-String -Path "$env:RUNNER_TEMP\mock.log" -Pattern "ctx=yes" -Quiet)) { throw "Engram's context never reached the model" }
+          Select-String -Path "$env:DEMO\billing\discount.py" -Pattern "clamp\(pct\)\)"
+
+      - name: Memory survives a restart (db stop saves, db start loads)
+        run: |
+          Push-Location $env:DEMO
+          & "$HOME\.engram\bin\engram.cmd" db stop
+          & "$HOME\.engram\bin\engram.cmd" db start
+          $why = (& "$HOME\.engram\bin\engram.cmd" why billing/discount.py) -join "`n"; $why
+          if ($why -notmatch "claude-code") { throw "the Claude Code session was not remembered after restart" }
+          Pop-Location
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-logs
+          path: |
+            ~/.engram/falkordb.log
+            ${{ runner.temp }}/mock.log
+            ${{ runner.temp }}/hooks.jsonl
