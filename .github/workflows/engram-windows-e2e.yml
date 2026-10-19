@@ -2,14 +2,21 @@
 # on PATH, embedded FalkorDB (our Windows build), then every way an agent talks to Engram.
 name: engram-windows-e2e
 
+# Called by falkordb-windows right after a green build (that build's binaries), and on pushes that only
+# change Engram itself (the latest green build).
 on:
+  workflow_call:
+    inputs:
+      falkordb_run:
+        type: string
+        required: true
   push:
     branches: [windows]
-    paths-ignore: [.github/workflows/falkordb-windows.yml, .github/workflows/claude-code-windows-probe.yml, scripts/windows/probe-plugin/**]
-  workflow_run:
-    workflows: [falkordb-windows]
-    types: [completed]
-  workflow_dispatch:
+    paths: [src/**, plugin/**, install.ps1, scripts/windows/e2e-mcp.mjs, scripts/windows/demo-repo.ps1, scripts/windows/mock-anthropic.mjs, scripts/windows/fake-agent/**, .github/workflows/engram-windows-e2e.yml]
+
+concurrency:
+  group: engram-windows-e2e-${{ inputs.falkordb_run || 'push' }}
+  cancel-in-progress: true
 
 permissions:
   actions: read
@@ -17,7 +24,6 @@ permissions:
 
 jobs:
   e2e:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: windows-latest
     timeout-minutes: 45
     env:
@@ -27,16 +33,30 @@ jobs:
       - run: git config --global core.autocrlf true # Git for Windows' default: CRLF checkouts must not break anything
       - uses: actions/checkout@v4
 
+      - name: FalkorDB for Windows (this build)
+        if: inputs.falkordb_run
+        uses: actions/download-artifact@v4
+        with:
+          name: falkordb-windows-x64
+          path: ${{ runner.temp }}/fdb
+
       - name: FalkorDB for Windows (latest green build)
+        id: fdb
         run: |
-          $run = gh run list -R $env:GITHUB_REPOSITORY -w falkordb-windows -s success -L 1 --json databaseId -q '.[0].databaseId'
-          gh run download $run -R $env:GITHUB_REPOSITORY -n falkordb-windows-x64 -D "$env:RUNNER_TEMP\fdb"
+          if (-not "${{ inputs.falkordb_run }}") {
+            $run = gh run list -R $env:GITHUB_REPOSITORY -w falkordb-windows -s success -L 1 --json databaseId -q '.[0].databaseId'
+            if (-not $run) { "::notice::No green FalkorDB build yet; this test runs as part of the next one."; "ready=false" >> $env:GITHUB_OUTPUT; exit 0 }
+            gh run download $run -R $env:GITHUB_REPOSITORY -n falkordb-windows-x64 -D "$env:RUNNER_TEMP\fdb"
+          }
           "ENGRAM_FALKORDB_ZIP=$env:RUNNER_TEMP\fdb\falkordb-windows-x64.zip" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "ready=true" >> $env:GITHUB_OUTPUT
 
       - name: Demo repo
+        if: steps.fdb.outputs.ready == 'true'
         run: ./scripts/windows/demo-repo.ps1 $env:DEMO
 
       - name: Install (no Node on PATH, no Docker, no WSL)
+        if: steps.fdb.outputs.ready == 'true'
         run: |
           git checkout -B main
           $env:Path = ($env:Path -split ";" | Where-Object { -not (Test-Path (Join-Path $_ "node.exe")) }) -join ";"
@@ -51,6 +71,7 @@ jobs:
           Get-Content "$HOME\.engram\falkordb.log" -Tail 5
 
       - name: CLI (fresh shell, engram from the user PATH)
+        if: steps.fdb.outputs.ready == 'true'
         run: |
           $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
           Push-Location $env:DEMO
@@ -62,6 +83,7 @@ jobs:
           Pop-Location
 
       - name: MCP, as each agent's config starts it
+        if: steps.fdb.outputs.ready == 'true'
         run: |
           $node = "$HOME\.engram\node-v22.23.1\node.exe"
           & $node scripts/windows/e2e-mcp.mjs cursor "$HOME\.cursor\mcp.json" $env:DEMO; if ($LASTEXITCODE) { throw "cursor" }
@@ -69,6 +91,7 @@ jobs:
           & $node scripts/windows/e2e-mcp.mjs gemini "$HOME\.gemini\settings.json" $env:DEMO; if ($LASTEXITCODE) { throw "gemini" }
 
       - name: engram run with an npm-installed CLI agent (.cmd shim)
+        if: steps.fdb.outputs.ready == 'true'
         run: |
           npm install -g ./scripts/windows/fake-agent
           $env:FAKE_AGENT_OUT = "$env:RUNNER_TEMP\fake-agent-prompt.txt"
@@ -81,6 +104,7 @@ jobs:
           git -C $env:DEMO checkout -- .
 
       - name: Claude Code (real CLI, scripted API) through the Engram plugin
+        if: steps.fdb.outputs.ready == 'true'
         env:
           ANTHROPIC_BASE_URL: http://127.0.0.1:8787
           ANTHROPIC_API_KEY: sk-ant-mock
@@ -104,6 +128,7 @@ jobs:
           Select-String -Path "$env:DEMO\billing\discount.py" -Pattern "clamp\(pct\)\)"
 
       - name: Memory survives a restart (db stop saves, db start loads)
+        if: steps.fdb.outputs.ready == 'true'
         run: |
           Push-Location $env:DEMO
           & "$HOME\.engram\bin\engram.cmd" db stop
@@ -113,7 +138,7 @@ jobs:
           Pop-Location
 
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.fdb.outputs.ready == 'true'
         with:
           name: e2e-logs
           path: |

@@ -5,8 +5,13 @@ name: falkordb-windows
 on:
   push:
     branches: [windows]
-    paths: [.github/workflows/falkordb-windows.yml, scripts/windows/**]
+    paths: [.github/workflows/falkordb-windows.yml, scripts/windows/patch-falkordb.sh]
   workflow_dispatch:
+
+# One build at a time; a newer push replaces a build still running.
+concurrency:
+  group: falkordb-windows
+  cancel-in-progress: true
 
 env:
   FALKORDB_TAG: v4.18.3
@@ -136,3 +141,9 @@ jobs:
           path: |
             falkordb-windows-x64.zip
             falkordb-windows-x64.zip.sha256
+
+  e2e:
+    needs: build
+    uses: ./.github/workflows/engram-windows-e2e.yml
+    with:
+      falkordb_run: ${{ github.run_id }}
