@@ -37,5 +37,8 @@ patch(f"{cf}/include/cpu_features_macros.h", "#if defined(__linux__) && !defined
 patch("deps/RediSearch/deps/VectorSimilarity/cmake/cpu_features.cmake",
       "GIT_REPOSITORY  https://github.com/google/cpu_features.git\n\tGIT_TAG  438a66e41807cd73e0c403966041b358f5eafc68",
       f"SOURCE_DIR  {cf}")
+# quickjs: Cygwin declares malloc_usable_size in <malloc.h>, which quickjs only includes on Linux.
+patch("deps/quickjs/quickjs.c", "#elif defined(__linux__) || defined(__GLIBC__)\n#include <malloc.h>",
+      "#elif defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)\n#include <malloc.h>")
 print("patched")
 PY
