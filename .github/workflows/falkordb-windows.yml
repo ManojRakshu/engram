@@ -13,6 +13,10 @@ concurrency:
   group: falkordb-windows
   cancel-in-progress: true
 
+permissions:
+  actions: read # the e2e stage downloads this run's build
+  contents: read
+
 env:
   FALKORDB_TAG: v4.18.3
   REDIS_VERSION: 8.6.2
