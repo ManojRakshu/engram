@@ -10,7 +10,7 @@ on:
 
 # One build at a time; a newer push replaces a build still running.
 concurrency:
-  group: falkordb-windows
+  group: falkordb-windows-build
   cancel-in-progress: true
 
 permissions:
