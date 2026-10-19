@@ -1,0 +1,31 @@
+# Engram
+
+> Engram is an open-source (MIT) context graph for coding agents, built on FalkorDB. It turns a repository into one graph of code (files, symbols, calls, imports), git history (commits, authors, co-change) and agent memory (sessions, reads, edits, lessons, verify commands, edit claims), and gives the agent a ~200-token map of likely `file:lines` locations before its first tool call. It makes no LLM calls of its own; every answer is a Cypher query.
+
+Measured results (Claude Code headless, claude-haiku-5-5, same model and bugs with and without Engram):
+- pallets/click, 12 injected bugs x 3 repeats (144 runs across 4 setups): -25% mean input tokens, -29% tool calls, -23% time; 35/36 fixed vs 36/36 baseline.
+- networkx (128k lines), 6 bugs x 1 repeat: -24% input tokens, -40% tool calls, -36% time.
+- yt-dlp, 30 real GitHub issues, zero LLM tokens: right file in the top 3 for 22/30. Live Claude Code on 4 of them: -31% tokens, -33% tool calls.
+Raw data for every number is in the repository under bench/results.
+
+Install (macOS on Apple silicon, Linux x64/arm64 with glibc 2.39+): `curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh` inside a repo. No Docker, database server or API keys; FalkorDB runs embedded (FalkorDBLite). Connects Claude Code (plugin with hooks), Cursor, Codex, Gemini CLI, Windsurf, opencode, VS Code, Cline, Kiro and any MCP client.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/ManojRakshu/engram/main/README.md): what it does, benchmark, install, graph data model
+- [Cypher queries](https://raw.githubusercontent.com/ManojRakshu/engram/main/docs/CYPHER.md): every query and graph algorithm the product depends on
+- [Comparison](https://raw.githubusercontent.com/ManojRakshu/engram/main/docs/COMPARISON.md): results, setup, speed and resources vs codebase-memory-mcp, and where Engram is behind
+- [Full site text](https://manojrakshu.github.io/engram/llms-full.txt): this website as plain text
+
+## Benchmark data
+
+- [click report](https://raw.githubusercontent.com/ManojRakshu/engram/main/bench/results/final/click-report.md)
+- [networkx report](https://raw.githubusercontent.com/ManojRakshu/engram/main/bench/results/final/networkx-report.md)
+- [summary.json](https://raw.githubusercontent.com/ManojRakshu/engram/main/bench/results/summary.json)
+- [yt-dlp real-world results](https://raw.githubusercontent.com/ManojRakshu/engram/main/bench/results/realworld.json)
+
+## Optional
+
+- [Source code](https://github.com/ManojRakshu/engram)
+- [Demo video](https://youtu.be/jwso6cm9fqY)
+- [Blog post: the story and what went wrong](https://dev.to/manoj_shetty/my-coding-agent-kept-searching-the-same-repo-again-and-again-so-i-gave-it-a-memory-481g)

@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engram: a FalkorDB context graph for coding agents</title>
+<meta name="description" content="Engram turns a repo into a FalkorDB graph of code, git history and agent memory, and gives coding agents a ~200-token map before their first tool call. Measured on 144 Claude Code runs: −25% input tokens, −29% tool calls. Open source, MIT.">
+<link rel="canonical" href="https://manojrakshu.github.io/engram/">
+<meta name="author" content="Manoj Shetty">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#FAF9F6">
+<link rel="icon" href="favicon.ico" sizes="32x32 48x48">
+<link rel="sitemap" type="application/xml" href="sitemap.xml">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="alternate" type="application/atom+xml" href="feed.xml" title="Engram updates">
+<link rel="me" href="https://github.com/ManojRakshu">
+<link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Engram">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Engram: a FalkorDB context graph for coding agents">
+<meta property="og:description" content="A ~200-token map of where to look, memory across sessions, and edit claims between agents. 144 Claude Code runs: −25% input tokens, −29% tool calls. No LLM calls of its own.">
+<meta property="og:url" content="https://manojrakshu.github.io/engram/">
+<meta property="og:image" content="https://manojrakshu.github.io/engram/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Engram: your coding agent searches the same repo again and again. Engram gives it a map.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Engram: a FalkorDB context graph for coding agents">
+<meta name="twitter:description" content="144 Claude Code runs: −25% input tokens, −29% tool calls, same model. Open source, MIT.">
+<meta name="twitter:image" content="https://manojrakshu.github.io/engram/og.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://manojrakshu.github.io/engram/#person",
+      "name": "Manoj Shetty",
+      "url": "https://github.com/ManojRakshu",
+      "sameAs": ["https://github.com/ManojRakshu", "https://dev.to/manoj_shetty"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://manojrakshu.github.io/engram/#website",
+      "url": "https://manojrakshu.github.io/engram/",
+      "name": "Engram",
+      "publisher": {"@id": "https://manojrakshu.github.io/engram/#person"}
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://manojrakshu.github.io/engram/#webpage",
+      "url": "https://manojrakshu.github.io/engram/",
+      "name": "Engram: a FalkorDB context graph for coding agents",
+      "isPartOf": {"@id": "https://manojrakshu.github.io/engram/#website"},
+      "about": {"@id": "https://manojrakshu.github.io/engram/#software"},
+      "primaryImageOfPage": "https://manojrakshu.github.io/engram/og.png",
+      "datePublished": "2026-10-19",
+      "dateModified": "2026-10-19",
+      "author": {"@id": "https://manojrakshu.github.io/engram/#person"}
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://manojrakshu.github.io/engram/#app",
+      "name": "Engram",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS (Apple silicon), Linux (x64, arm64)",
+      "softwareVersion": "0.1.0",
+      "downloadUrl": "https://github.com/ManojRakshu/engram",
+      "installUrl": "https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "author": {"@id": "https://manojrakshu.github.io/engram/#person"}
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": "https://manojrakshu.github.io/engram/#software",
+      "name": "Engram",
+      "description": "A FalkorDB context graph for coding agents: a ranked map of where to look before the first tool call, memory across sessions, and atomic edit claims between agents. No LLM calls of its own.",
+      "url": "https://manojrakshu.github.io/engram/",
+      "codeRepository": "https://github.com/ManojRakshu/engram",
+      "programmingLanguage": ["TypeScript"],
+      "runtimePlatform": "Node.js",
+      "license": "https://opensource.org/licenses/MIT",
+      "version": "0.1.0",
+      "author": {"@id": "https://manojrakshu.github.io/engram/#person"},
+      "keywords": "FalkorDB, knowledge graph, coding agents, Claude Code, MCP, agent memory, Cypher, context engineering"
+    },
+    {
+      "@type": "VideoObject",
+      "name": "Engram demo: a context graph for coding agents",
+      "description": "Engram on pallets/click, networkx and yt-dlp: the map, the graph walk, the benchmark and why FalkorDB.",
+      "thumbnailUrl": "https://i.ytimg.com/vi/jwso6cm9fqY/hqdefault.jpg",
+      "uploadDate": "2026-10-18",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/jwso6cm9fqY",
+      "contentUrl": "https://youtu.be/jwso6cm9fqY"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Does Engram call an LLM?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every answer is a parameterised Cypher query on FalkorDB. It adds only the ~200-token map it injects, and it works with whatever model your agent uses."}},
+        {"@type": "Question", "name": "Do I need Docker or a database server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Engram runs FalkorDBLite, FalkorDB's own embedded build, as one small server per user on a Unix socket in ~/.engram. Node.js is fetched once if it is missing."}},
+        {"@type": "Question", "name": "Which languages does it index?", "acceptedAnswer": {"@type": "Answer", "text": "Python, TypeScript and JavaScript today, through tree-sitter. A language is a parser adapter."}},
+        {"@type": "Question", "name": "Did it ever make things worse?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. It missed one fix in 36 on click (35/36 vs 36/36), an early version of memory confused the next task, and pasting 1,600 tokens of code raised token use. All of it is documented in the repo."}},
+        {"@type": "Question", "name": "Is it free and open source?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, MIT licensed. Source, benchmark harness and raw results are on GitHub."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<style>
+:root{
+  --paper:#FAF9F6; --paper-2:#F1EFE9; --ink:#17171A; --ink-2:#4E4F57; --ink-3:#62636B;
+  --rule:#17171A; --hair:#DCD9D0; --accent:#5B3CC4; --accent-soft:#ECE7FB; --red:#B3402A;
+  --serif:"Newsreader", Georgia, "Times New Roman", serif;
+  --mono:"Space Mono", ui-monospace, Menlo, monospace;
+  --hand:"Caveat", "Comic Sans MS", cursive;
+  --w:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 19px/1.62 var(--serif);font-optical-sizing:auto}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+img{max-width:100%;height:auto;display:block}
+.wrap{max-width:var(--w);margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono)}
+.kicker{font:400 12px/1.4 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:16px;background:var(--ink);color:var(--paper);padding:8px 12px;z-index:9}
+
+/* header */
+header.top{border-bottom:1px solid var(--hair)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:72px}
+.brand{display:flex;align-items:baseline;gap:10px;text-decoration:none;font:700 15px var(--mono);letter-spacing:.12em}
+.brand small{font-weight:400;color:var(--ink-3);letter-spacing:0}
+.nav ul{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-size:17px}
+.nav ul a{text-decoration:none;color:var(--ink-2)}
+.nav ul a:hover{color:var(--ink)}
+.gh{display:inline-flex;align-items:center;gap:8px;font:400 13px var(--mono);border:1px solid var(--rule);padding:7px 12px;text-decoration:none}
+.gh:hover{background:var(--ink);color:var(--paper)}
+.gh svg{width:16px;height:16px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:72px 0 40px}
+.lede-i{font-style:italic;color:var(--ink-2);margin:0 0 14px;font-size:19px}
+h1{font:500 clamp(40px,5.6vw,68px)/1.04 var(--serif);letter-spacing:-.02em;margin:0 0 26px}
+h1 em{font-style:italic}
+h1 .box{white-space:nowrap;background:var(--ink);color:var(--paper);padding:0 .14em;font-style:normal;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.hero p.sub{font-size:20px;margin:0 0 14px;max-width:34em}
+.hero p.sub b{font-weight:600}
+.hero .tag{font-style:italic;color:var(--ink-2);margin:0}
+figure{margin:0}
+figcaption{font:400 15px/1.4 var(--serif);color:var(--ink-3);margin-top:10px;text-align:center}
+figcaption b{font-weight:500;color:var(--ink-2)}
+.fig svg{width:100%;height:auto;overflow:visible}
+
+/* install */
+.install{margin:28px auto 0;max-width:900px;text-align:center}
+.tabs{display:inline-flex;gap:22px;margin-bottom:12px;font:400 12px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.tabs button{all:unset;cursor:pointer;color:var(--ink-3);padding-bottom:4px;border-bottom:1px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--ink)}
+.cmd{display:flex;align-items:stretch;border:1px solid var(--rule);background:var(--paper);text-align:left}
+.cmd code{flex:1;padding:14px 18px;font:400 14px/1.5 var(--mono);overflow-x:auto;white-space:nowrap}
+.cmd code::before{content:"$ ";color:var(--ink-3)}
+.cmd code.json::before{content:""}
+.cmd button{all:unset;cursor:pointer;border-left:1px solid var(--hair);padding:0 18px;font:400 12px var(--mono);letter-spacing:.14em;color:var(--ink-3)}
+.cmd button:hover{color:var(--ink)}
+.panel[hidden]{display:none}
+.install .note{font-size:16px;color:var(--ink-2);margin:12px 0 0}
+.cta{display:flex;justify-content:center;gap:34px;margin:26px 0 0;font-style:italic;font-size:19px}
+.cta a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:6px}
+
+/* press run */
+.press{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);background:var(--paper-2);margin:72px 0 10px}
+.press .row{padding:22px 26px;border-bottom:1px dashed var(--ink-3);display:flex;flex-direction:column;gap:6px}
+.press .row:nth-child(odd){border-right:1px dashed var(--ink-3)}
+.press .row:nth-last-child(-n+2){border-bottom:0}
+.press .num{font:700 clamp(34px,4.6vw,52px)/1 var(--mono);letter-spacing:-.02em}
+.press .num.good{color:var(--accent)}
+.press .what{font:400 12px/1.5 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.press .src{font:400 12px var(--mono);color:var(--ink-3)}
+.press-head{display:flex;justify-content:space-between;align-items:baseline;margin-top:72px}
+.press-head + .press{margin-top:12px}
+.press-foot{text-align:right;font:400 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+/* sections */
+section.s{padding:84px 0 8px;border-top:1px solid var(--hair);margin-top:84px}
+section.s:first-of-type{margin-top:64px}
+h2{font:500 clamp(30px,3.6vw,42px)/1.12 var(--serif);letter-spacing:-.01em;margin:0 0 26px;display:flex;gap:18px;align-items:baseline}
+h2 .sec{color:var(--red);font-size:.8em}
+h3{font:600 22px/1.3 var(--serif);margin:40px 0 10px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.cols>*,.hero>*{min-width:0}
+.prose{max-width:40em}
+.prose p{margin:0 0 18px}
+.def{font-style:italic}
+.def b{font-style:normal;color:var(--red);font-weight:500;margin-right:6px}
+.read{font-style:italic}
+ul.tight{padding-left:20px;margin:0 0 18px}
+ul.tight li{margin:4px 0}
+
+/* tables */
+.tbl{overflow-x:auto;margin:16px 0 8px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font:400 14px/1.45 var(--mono)}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--hair);vertical-align:middle;white-space:nowrap}
+td.wrap,th.wrap{white-space:normal;min-width:16em}
+th{vertical-align:bottom;font-weight:400;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+tr.us td{background:var(--accent-soft)}
+tr.us td:first-child{font-weight:700}
+.src-line{font:400 12px/1.6 var(--mono);color:var(--ink-3);margin:6px 0 0}
+.src-line a{color:var(--ink-2)}
+
+/* code */
+pre{background:var(--paper-2);border:1px solid var(--hair);padding:16px 18px;overflow-x:auto;font:400 13.5px/1.6 var(--mono);margin:14px 0}
+pre .c{color:var(--ink-3)}
+pre .hl{color:var(--accent);font-weight:700}
+code{font-family:var(--mono);font-size:.84em}
+p code,li code,td code{background:var(--paper-2);padding:1px 5px;border:1px solid var(--hair)}
+
+/* notes */
+.honest{border-left:3px solid var(--red);padding:4px 0 4px 20px;margin:28px 0}
+.honest h3{margin-top:0;color:var(--red);font:400 12px var(--mono);letter-spacing:.18em;text-transform:uppercase}
+.shot{border:1px solid var(--rule);background:#0C0D12}
+.video{position:relative;aspect-ratio:16/9;border:1px solid var(--rule);background:#0C0D12 center/cover no-repeat;cursor:pointer;display:block;width:100%;padding:0}
+.video span{position:absolute;inset:auto auto 18px 18px;font:400 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;background:var(--paper);color:var(--ink);border:1px solid var(--ink);padding:8px 12px}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* faq */
+details{border-bottom:1px solid var(--hair);padding:16px 0}
+details:first-of-type{border-top:1px solid var(--rule)}
+summary{cursor:pointer;font:600 20px/1.35 var(--serif);list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:400 20px var(--mono);color:var(--ink-3)}
+details[open] summary::after{content:"−"}
+details p{margin:10px 0 4px;max-width:44em}
+
+footer{border-top:1px solid var(--rule);margin-top:96px;padding:34px 0 56px;font-size:16px;color:var(--ink-2)}
+footer .links{display:flex;flex-wrap:wrap;gap:6px 18px;font:400 13px var(--mono);margin-bottom:12px}
+footer p{margin:6px 0}
+
+@media (max-width:900px){
+  .hero,.cols{grid-template-columns:1fr;gap:36px}
+  .nav ul{display:none}
+  .hero{padding-top:44px}
+}
+@media (max-width:640px){
+  body{font-size:18px}
+  .wrap{padding:0 16px}
+  .press{grid-template-columns:1fr}
+  .press .row{border-right:0!important;border-bottom:1px dashed var(--ink-3)!important}
+  .press .row:last-child{border-bottom:0!important}
+  .cta{flex-direction:column;gap:12px;align-items:center}
+  section.s{padding-top:56px;margin-top:56px}
+  .tabs{gap:14px}
+  .tbl table:has(.wrap) td,.tbl table:has(.wrap) th{white-space:normal}
+  td.wrap,th.wrap{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/>
+    </filter>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#17171A" stroke-width="1.5"/>
+    </marker>
+    <marker id="arr-v" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#5B3CC4" stroke-width="1.5"/>
+    </marker>
+  </defs>
+</svg>
+
+<header class="top">
+  <nav class="wrap nav" aria-label="Main">
+    <a class="brand" href="./">ENGRAM <small>v0.1.0 · by Manoj Shetty</small></a>
+    <ul>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#graph">The graph</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#compare">Compared</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a class="gh" href="https://github.com/ManojRakshu/engram"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>GitHub</a>
+  </nav>
+</header>
+
+<main id="main" class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <p class="lede-i">An open-source context graph for coding agents, built on FalkorDB</p>
+    <h1>Your agent searches the same repo <em>again and again.</em> <span class="box">Give it a map.</span></h1>
+    <p class="sub"><b>Engram</b> turns a repository into one FalkorDB graph: the code, its git history, and what your agents did in it. Before the agent's first tool call it gets a ~200-token map of where to look. While it works, it gets the tests to run, the files that usually change together, and a stop sign if another agent is editing the same file.</p>
+    <p class="tag">No LLM calls of its own. Every answer is a Cypher query.</p>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 540 470" role="img" aria-labelledby="f1t f1d">
+      <title id="f1t">Fig. 1: one graph, three layers</title>
+      <desc id="f1d">The file src/click/types.py defines Choice.normalize_choice, where the bug is; Choice._normalized_mapping calls it. A commit touched types.py, which changes together with core.py in 35 commits. An agent session edited types.py, so Engram hints that core.py usually changes with it.</desc>
+      <g font-family="Caveat, cursive" font-size="21" fill="#B3402A">
+        <text x="0" y="36">code</text>
+        <text x="0" y="250">history</text>
+        <text x="0" y="420">agents</text>
+      </g>
+      <g filter="url(#rough)" fill="none" stroke="#17171A" stroke-width="1.5">
+        <line x1="0" y1="170" x2="540" y2="170" stroke="#CFCBC1" stroke-dasharray="4 6"/>
+        <line x1="0" y1="335" x2="540" y2="335" stroke="#CFCBC1" stroke-dasharray="4 6"/>
+        <path d="M150 158 C 190 100, 250 80, 310 76" marker-end="url(#arr)"/>
+        <path d="M456 104 C 420 96, 380 84, 346 78" marker-end="url(#arr)"/>
+        <path d="M300 252 C 240 250, 190 215, 155 184" marker-end="url(#arr)"/>
+        <path d="M156 170 L 452 170" stroke-width="2.2" stroke-dasharray="7 5"/>
+        <path d="M140 385 L 140 188" marker-end="url(#arr)"/>
+        <path d="M160 402 C 300 410, 450 330, 466 190" stroke="#5B3CC4" stroke-width="1.8" marker-end="url(#arr-v)"/>
+        <circle cx="140" cy="170" r="15" fill="#FAF9F6"/>
+        <circle cx="328" cy="76" r="15" fill="#5B3CC4" stroke="#5B3CC4"/>
+        <circle cx="470" cy="108" r="11" fill="#FAF9F6"/>
+        <circle cx="316" cy="254" r="11" fill="#FAF9F6"/>
+        <circle cx="468" cy="170" r="13" fill="#FAF9F6"/>
+        <circle cx="140" cy="402" r="16" fill="#FAF9F6"/>
+      </g>
+      <g font-family="Caveat, cursive" font-size="22" fill="#17171A">
+        <text x="80" y="210">types.py</text>
+        <text x="250" y="46">Choice.normalize_choice</text>
+        <text x="390" y="142">_normalized_mapping</text>
+        <text x="296" y="290">commit</text>
+        <text x="480" y="208">core.py</text>
+        <text x="96" y="450">session</text>
+      </g>
+      <g font-family="Space Mono, monospace" font-size="10.5" fill="#4E4F57">
+        <text x="168" y="104">DEFINES</text>
+        <text x="380" y="80">CALLS</text>
+        <text x="196" y="246">TOUCHED</text>
+        <text x="236" y="162">CO_CHANGES · 35 commits</text>
+        <text x="148" y="300">EDITED</text>
+      </g>
+      <g font-family="Caveat, cursive" font-size="20" fill="#5B3CC4">
+        <text x="300" y="16">the bug is here ↓</text>
+        <text x="250" y="392">hint: "usually changed with core.py"</text>
+      </g>
+    </svg>
+    <figcaption><b>Fig. 1</b>: one graph, three layers (real names from pallets/click)</figcaption>
+  </figure>
+</div>
+
+<div class="install" id="get">
+  <div class="tabs" role="tablist" aria-label="Install options">
+    <button role="tab" aria-selected="true" aria-controls="p-sh" id="t-sh">macOS · Linux</button>
+    <button role="tab" aria-selected="false" aria-controls="p-mcp" id="t-mcp">Any MCP client</button>
+    <button role="tab" aria-selected="false" aria-controls="p-team" id="t-team">Shared FalkorDB</button>
+  </div>
+  <div class="panel" id="p-sh" role="tabpanel" aria-labelledby="t-sh">
+    <div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh</code><button type="button" data-copy>COPY</button></div>
+    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.</p>
+  </div>
+  <div class="panel" id="p-mcp" role="tabpanel" aria-labelledby="t-mcp" hidden>
+    <div class="cmd"><code class="json">{ "mcpServers": { "engram": { "command": "~/.engram/app/plugin/bin/engram", "args": ["mcp"] } } }</code><button type="button" data-copy>COPY</button></div>
+    <p class="note">Use the absolute path. The installer already wires Claude Code, Cursor, Codex, Gemini CLI, Windsurf, opencode, VS Code, Cline and Kiro.</p>
+  </div>
+  <div class="panel" id="p-team" role="tabpanel" aria-labelledby="t-team" hidden>
+    <div class="cmd"><code>engram setup --url falkor://user:pass@host:port</code><button type="button" data-copy>COPY</button></div>
+    <p class="note">One team-wide memory on your own FalkorDB or FalkorDB Cloud. Or set <code>FALKORDB_URL</code>.</p>
+  </div>
+  <div class="cta"><a href="#how">How it works →</a><a href="#results">The numbers →</a><a href="https://youtu.be/jwso6cm9fqY">The 2-min video →</a></div>
+</div>
+
+<!-- PRESS RUN -->
+<div class="press-head"><span class="kicker">The numbers · every one measured</span><span class="press-foot">Raw data in bench/results</span></div>
+<div class="press" role="list">
+  <div class="row" role="listitem"><span class="num good">−25%</span><span class="what">input tokens, Claude Code on 12 click bugs × 3 runs</span><a class="src" href="https://github.com/ManojRakshu/engram/blob/main/bench/results/final/click-report.md">source: click-report.md ↗</a></div>
+  <div class="row" role="listitem"><span class="num good">−29%</span><span class="what">tool calls, same model, same bugs</span><a class="src" href="https://github.com/ManojRakshu/engram/blob/main/bench/results/summary.json">source: summary.json ↗</a></div>
+  <div class="row" role="listitem"><span class="num">22/30</span><span class="what">real yt-dlp issues: right file in the top 3, zero LLM tokens</span><a class="src" href="https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld.json">source: realworld.json ↗</a></div>
+  <div class="row" role="listitem"><span class="num">0</span><span class="what">LLM calls made by Engram itself</span><a class="src" href="https://github.com/ManojRakshu/engram/blob/main/docs/CYPHER.md">every query: CYPHER.md ↗</a></div>
+</div>
+<p class="press-foot">claude-haiku-5-5 · Claude Code headless · Oct 16–18 2026</p>
+
+<!-- §1 -->
+<section class="s" id="problem" aria-labelledby="h-problem">
+  <h2 id="h-problem"><span class="sec">§1</span> An agent spends a third of its calls looking</h2>
+  <div class="cols">
+    <div class="prose">
+      <p>I counted the tool calls in 83 of my own Claude Code sessions: 32,713 calls. <b>31% were the agent searching or navigating</b> (grep, sed, cat, find). Only 9% were edits. The median session made <b>24 search calls before its first edit</b>, and 44% of file views re-read a file the agent had already seen in that session.</p>
+      <p>Each of those calls re-sends the whole conversation, so the tokens pile up with every step. The next day, on a similar task in the same repo, it searches again from scratch. It doesn't know which tests cover the code, who changed it last week, or that another agent is editing the same file right now.</p>
+      <p class="src-line">Aggregate counts only; the sessions themselves are private projects and are not published.</p>
+    </div>
+    <div class="prose">
+      <p class="def"><b>Definition 1.1</b>A <em>map</em> is a short list of exact <code>file:lines symbol</code> locations, the tests that reach them and the verify command that worked last time, ranked by a graph and handed to the agent before its first tool call.</p>
+      <p>This is the real map Claude Code got for one click bug, "<code>click.Choice(["Apple", "Banana"], case_sensitive=False)</code> rejects <code>apple</code>":</p>
+<pre>[engram] Likely locations for this task (code graph, confidence high):
+- <span class="hl">src/click/types.py:406-424 Choice.normalize_choice</span>
+- src/click/exceptions.py:51-52 ClickException.format_message
+- src/click/types.py:381-386 Choice.to_info_dict
+- src/click/types.py:495-515 Choice.shell_complete
+Tests: tests/test_types/test_Choice.py</pre>
+      <p>Without Engram: grep, grep, sed, edit. <b>4 tool calls, 112,298 tokens.</b> With Engram: read, edit. <b>2 tool calls, 75,733 tokens.</b> Tests passed in both.</p>
+      <p class="src-line">Run <code>choice-case</code>, repeat 1, baseline vs cold: <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/final/click.jsonl">bench/results/final/click.jsonl ↗</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- §2 -->
+<section class="s" id="how" aria-labelledby="h-how">
+  <h2 id="h-how"><span class="sec">§2</span> Four moments in every session</h2>
+  <div class="cols">
+    <div class="prose">
+      <p>Engram hooks into the agent's lifecycle at four points. Everything it says comes from the graph, and the graph is updated by what the agent does.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>When</th><th class="wrap">What the agent gets</th></tr></thead>
+        <tbody>
+          <tr><td>Before the first call</td><td class="wrap">the ~200-token map: 3–6 likely locations, the tests that reach them, the verify command that worked last time</td></tr>
+          <tr><td>Before every edit</td><td class="wrap">a block if another agent holds the file (one atomic Cypher write)</td></tr>
+          <tr><td>After every edit</td><td class="wrap">the tests for what changed, and files that usually change with it but haven't been touched; the file is re-indexed</td></tr>
+          <tr><td>On demand</td><td class="wrap">MCP tools: <code>find</code>, <code>impact</code> (blast radius + tests), <code>why</code> (history, experts, lessons)</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Overhead, measured in every benchmark run:</b> the prompt hook takes 149 ms p50 and injects ~221 tokens; tool hooks take ~50 ms and ~14 tokens. Both are included in all the results below.</p>
+      <p class="src-line">Source: <a href="https://github.com/ManojRakshu/engram#benchmark-claude-code-same-model-same-tasks">README, benchmark section ↗</a></p>
+    </div>
+    <figure class="fig">
+      <svg viewBox="0 0 600 470" role="img" aria-labelledby="f2t f2d">
+        <title id="f2t">Fig. 2: the loop with Engram</title>
+        <desc id="f2d">Your prompt goes to the FalkorDB graph, which hands the agent a map of about 200 tokens. Before each edit the agent claims the file in the graph; after each edit the graph re-indexes the file and sends a hint. When the session ends, what it read, edited and verified is written back as memory.</desc>
+        <g filter="url(#rough)" fill="none" stroke="#17171A" stroke-width="1.6">
+          <rect x="200" y="62" width="200" height="62" fill="#FAF9F6"/>
+          <rect x="200" y="252" width="200" height="62" fill="#FAF9F6"/>
+          <path d="M300 26 L300 58" marker-end="url(#arr)"/>
+          <path d="M300 128 L300 248" marker-end="url(#arr)"/>
+          <path d="M404 284 C 470 284, 470 94, 406 94" marker-end="url(#arr)"/>
+          <path d="M196 284 C 130 284, 130 94, 194 94" stroke="#5B3CC4" marker-end="url(#arr-v)"/>
+          <path d="M300 318 L300 360" marker-end="url(#arr)"/>
+          <path d="M300 396 L300 420" stroke-dasharray="4 4"/>
+        </g>
+        <g font-family="Caveat, cursive" fill="#17171A" text-anchor="middle">
+          <text x="300" y="18" font-size="22">your prompt</text>
+          <text x="300" y="102" font-size="30">FalkorDB graph</text>
+          <text x="300" y="292" font-size="30">agent</text>
+          <text x="300" y="388" font-size="24">read · edit · test</text>
+        </g>
+        <g font-family="Caveat, cursive" font-size="20">
+          <text x="312" y="196" fill="#B3402A">~200-token map</text>
+          <text x="478" y="180" fill="#B3402A">before edit:</text>
+          <text x="478" y="202" fill="#B3402A">claim the file</text>
+          <text x="6" y="180" fill="#5B3CC4">after edit:</text>
+          <text x="6" y="202" fill="#5B3CC4">re-index + hint</text>
+          <text x="300" y="450" fill="#B3402A" text-anchor="middle">session end: memory written back to the graph</text>
+        </g>
+      </svg>
+      <figcaption><b>Fig. 2</b>: the agent loop, with the graph on both sides of it</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- §3 -->
+<section class="s" id="graph" aria-labelledby="h-graph">
+  <h2 id="h-graph"><span class="sec">§3</span> One graph, three layers</h2>
+  <div class="cols">
+    <div class="prose">
+      <p>One graph per repository (<code>engram:&lt;owner&gt;-&lt;repo&gt;</code>), so repos are isolated without <code>WHERE</code> filters. The useful answers cross layers: "which file usually changes with this one, that this session hasn't touched, and that calls into it" is history, live agent memory and code in one query.</p>
+<pre><span class="c">// code</span>
+(:File)-[:DEFINES]->(:Symbol)-[:CALLS]->(:Symbol)
+(:Symbol)-[:HAS_MEMBER]->(:Symbol)
+(:File)-[:IMPORTS]->(:File)
+<span class="c">// history</span>
+(:Person)-[:AUTHORED]->(:Commit)-[:TOUCHED]->(:File)
+(:File)-[:CO_CHANGES {count, weight}]->(:File)
+<span class="c">// agents</span>
+(:Agent)-[:RAN]->(:Session)-[:READ|EDITED]->(:File)
+(:Session)-[:GOT_CONTEXT {rank, used}]->(:Symbol)
+(:Session)-[:LEARNED]->(:Lesson)-[:ABOUT]->(:File)
+(:Session)-[:RAN_CMD]->(:Procedure {cmd, ok, fail})
+(:Session)-[:CLAIMS {intent, since}]->(:File)</pre>
+      <p class="src-line">Full model and property list: <a href="https://github.com/ManojRakshu/engram#graph-data-model">README ↗</a></p>
+    </div>
+    <div class="prose">
+      <h3 style="margin-top:0">The walk grep can't do</h3>
+      <p>In networkx the report says <code>dijkstra_path_length</code>, but the bug is in <code>_dijkstra_multisource</code>, a few calls down. Engram follows <code>CALLS</code> up to 4 hops, but only through thin functions:</p>
+<pre>MATCH p = (s:Symbol {id: $api})-[:CALLS*1..4]->(n:Symbol)
+WHERE all(x IN nodes(p)[1..size(nodes(p)) - 1]
+          WHERE size(x.callNames) &lt;= 6)
+RETURN n.qualname, min(length(p)) AS hops</pre>
+      <h3>The lock that is one query</h3>
+      <p>FalkorDB runs writes on a graph one at a time, so a single Cypher write is an atomic lock. The same pattern guards edit claims between agents and stops two indexers from writing the graph twice.</p>
+<pre>MERGE (l:IndexLock {k: 1})
+WITH l, (l.owner IS NULL OR l.at &lt; $stale) AS free
+SET l.owner = CASE WHEN free THEN $me ELSE l.owner END,
+    l.at    = CASE WHEN free THEN $now ELSE l.at END
+RETURN l.owner = $me AS got</pre>
+      <p class="src-line">Every query the product depends on: <a href="https://github.com/ManojRakshu/engram/blob/main/docs/CYPHER.md">docs/CYPHER.md ↗</a> · claim test: <code>test/core.test.ts</code></p>
+    </div>
+  </div>
+  <figure style="margin-top:40px">
+    <img class="shot" src="img/delegation-networkx.png" width="1440" height="1000" loading="lazy" alt="Engram dashboard, Ask the graph tab, on networkx: the task names dijkstra_path_length and the graph walk reaches _dijkstra_multisource and _weight_function, each ranked with the reason it is in the pack.">
+    <figcaption><b>Fig. 3</b>: the dashboard's "why" view on networkx: each item in the pack, and the path that put it there</figcaption>
+  </figure>
+</section>
+
+<!-- §4 -->
+<section class="s" id="results" aria-labelledby="h-results">
+  <h2 id="h-results"><span class="sec">§4</span> Results, with the raw data</h2>
+  <div class="prose">
+    <p><b>How it's measured.</b> Bugs injected into real projects, each validated to break the test suite. The agent sees only a user-style symptom report. Every run gets a fresh single-commit copy, so <code>git diff</code> can't leak the answer. A fix counts only if the full test suite passes. Same model, same harness (<code>claude -p</code>); the only difference is the plugin.</p>
+  </div>
+
+  <h3>pallets/click: 12 bugs × 3 repeats × 4 setups = 144 runs</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Setup</th><th>Fixed</th><th>Input tokens (mean)</th><th>Median</th><th>Tool calls</th><th>Search calls</th><th>Time</th><th>$ / fix</th></tr></thead>
+    <tbody>
+      <tr><td>Claude Code</td><td>36/36</td><td>137,600</td><td>114,704</td><td>5.1</td><td>3.4</td><td>16.4 s</td><td>$0.0036</td></tr>
+      <tr><td>+ codebase-memory-mcp</td><td>36/36</td><td>126,912 (−8%)</td><td>121,922</td><td>4.7</td><td>2.8</td><td>13.4 s</td><td>$0.0035</td></tr>
+      <tr class="us"><td>+ Engram</td><td>35/36</td><td>103,467 (−25%)</td><td>96,129</td><td>3.6 (−29%)</td><td>1.7</td><td>12.7 s (−23%)</td><td>$0.0034</td></tr>
+      <tr><td>+ Engram, warm memory</td><td>35/36</td><td>104,347</td><td>98,656</td><td>3.8</td><td>1.8</td><td>13.2 s</td><td>$0.0034</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src-line">Per-task geometric mean vs Claude Code: Engram −22%, fewer tokens on 11 of 12 bugs. Source: <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/final/click-report.md">click-report.md ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/final/click.jsonl">raw JSONL ↗</a></p>
+
+  <h3>networkx, 128k lines: 6 bugs × 1 repeat</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Setup</th><th>Fixed</th><th>Input tokens</th><th>Tool calls</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>Claude Code</td><td>6/6</td><td>110,412</td><td>4.7</td><td>23.0 s</td></tr>
+      <tr><td>+ codebase-memory-mcp</td><td>6/6</td><td>102,816 (−7%)</td><td>4.3</td><td>19.7 s</td></tr>
+      <tr class="us"><td>+ Engram</td><td>5/5*</td><td>84,362 (−24%)</td><td>2.8 (−40%)</td><td>14.8 s (−36%)</td></tr>
+      <tr><td>+ Engram, warm memory</td><td>6/6</td><td>92,220</td><td>3.7</td><td>20.5 s</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src-line">* One cold run was not executed (the account's usage limit stopped the run), so it counts as neither pass nor fail. Only the complete first repeat is reported. Source: <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/final/networkx-report.md">networkx-report.md ↗</a></p>
+
+  <h3>A messy real project: yt-dlp's own bug reports</h3>
+  <div class="cols">
+    <div class="prose">
+      <p>yt-dlp: 1,128 Python files, 248k lines, years of community patches. I indexed it as of 30 April 2026 (4.0 s) and took every later fix that closes a GitHub issue. Engram gets only the issue the user wrote and is scored against the functions the maintainers actually changed.</p>
+      <ul class="tight">
+        <li><b>30 real issues, zero LLM tokens:</b> right file in the top 3 for <b>22/30</b>; the fixed function in the top 10 for 20/30 and on the map for 16/30. Median 240 ms.</li>
+        <li><b>Live Claude Code on 4 of them</b> (one run each, fix not in git): both setups found the right file and function 4/4; with Engram <b>−31% tokens, −33% tool calls, −24% time</b>.</li>
+      </ul>
+      <p class="src-line"><a href="https://github.com/ManojRakshu/engram/blob/main/bench/realworld.ts">bench/realworld.ts ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld.json">realworld.json ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld-live.json">realworld-live.json ↗</a></p>
+    </div>
+    <div class="prose">
+      <h3 style="margin-top:0">Retrieval alone, zero LLM tokens</h3>
+      <p>Before any agent runs, how often does the map point at the bug?</p>
+      <div class="tbl"><table>
+        <thead><tr><th></th><th>click (12)</th><th>networkx (6)</th></tr></thead>
+        <tbody>
+          <tr><td>buggy file in top 3</td><td>10/12</td><td>6/6</td></tr>
+          <tr><td>buggy function in top 10</td><td>8/12</td><td>6/6</td></tr>
+          <tr><td>on the ~200-token map</td><td>8/12</td><td>6/6</td></tr>
+          <tr><td>time per pack</td><td>~20 ms</td><td>~90 ms</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src-line"><a href="https://github.com/ManojRakshu/engram/blob/main/bench/retrieval.ts">bench/retrieval.ts ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/retrieval.json">retrieval.json ↗</a></p>
+    </div>
+  </div>
+
+  <div class="honest">
+    <h3>Honest notes</h3>
+    <ul class="tight">
+      <li><b>One miss in 36 on click.</b> The agent edited the 5-line wrapper <code>_normalize_opt</code> instead of <code>_split_opt</code>, which it calls. The map had listed the wrapper and named the real function only as its next call. Fixed after the benchmark (a thin wrapper's delegate now gets its own line); the benchmark was not re-run, so the number stays 35/36.</li>
+      <li><b>Small scope.</b> One model (Haiku), 18 injected bugs in two Python repos, plus 30 real issues. networkx has one repeat.</li>
+      <li><b>Cost per fix drops less than tokens (−6%),</b> because most input tokens are cheap cache reads.</li>
+      <li><b>Warm memory helps less than cold on click</b> (−24% vs −25%). An early version of memory made things worse; that story is in the <a href="https://dev.to/manoj_shetty/my-coding-agent-kept-searching-the-same-repo-again-and-again-so-i-gave-it-a-memory-481g">blog post</a>.</li>
+      <li><b>My first benchmark leaked the bug</b> through <code>git diff</code>. I caught it, rebuilt the harness, and discarded those runs.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- §5 -->
+<section class="s" id="falkordb" aria-labelledby="h-falkor">
+  <h2 id="h-falkor"><span class="sec">§5</span> Why FalkorDB</h2>
+  <div class="prose"><p>The graph has to answer before every prompt without the agent waiting. Take FalkorDB out and nothing is left: the map, hints, claims, memory and blast radius are all Cypher on the graph.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th class="wrap">Engram needs</th><th class="wrap">FalkorDB gives</th></tr></thead>
+    <tbody>
+      <tr><td class="wrap">Multi-hop walks inside a hook's time budget</td><td class="wrap">sparse-matrix (GraphBLAS) traversal; Engram's queries take 1–40 ms; the cross-layer hint ~11 ms</td></tr>
+      <tr><td class="wrap">Atomic claims between agents, no lock service</td><td class="wrap">writes are serialised per graph, so one query is the lock</td></tr>
+      <tr><td class="wrap">One isolated graph per repo, many per instance</td><td class="wrap">built in (<code>engram:&lt;repo&gt;</code>)</td></tr>
+      <tr><td class="wrap">PageRank, communities and full-text in one engine</td><td class="wrap"><code>algo.pageRank</code>, <code>algo.labelPropagation</code>, full-text indexes</td></tr>
+      <tr><td class="wrap">Small enough to run beside every agent</td><td class="wrap">FalkorDBLite, embedded: 43–60 MB RAM at rest with networkx; 2.8 MB on disk</td></tr>
+      <tr><td class="wrap">Team memory when you want it</td><td class="wrap">point everyone at one FalkorDB or FalkorDB Cloud with <code>--url</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="src-line">Measured on one Apple-silicon Mac, Oct 17 2026. Source: <a href="https://github.com/ManojRakshu/engram/blob/main/docs/COMPARISON.md">docs/COMPARISON.md ↗</a></p>
+</section>
+
+<!-- §6 -->
+<section class="s" id="compare" aria-labelledby="h-compare">
+  <h2 id="h-compare"><span class="sec">§6</span> Compared, including where Engram is behind</h2>
+  <div class="prose"><p>Only codebase-memory-mcp was benchmarked side by side (results in §4). The others are described from their own docs and marked so.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Install</th><th>Needs first</th><th>Database</th><th class="wrap">LLM calls / API key</th></tr></thead>
+    <tbody>
+      <tr class="us"><td>Engram</td><td><code>curl … | sh</code></td><td>nothing</td><td>FalkorDB, embedded</td><td class="wrap">none</td></tr>
+      <tr><td>codebase-memory-mcp</td><td><code>curl … | bash</code></td><td>nothing</td><td>embedded SQLite</td><td class="wrap">none</td></tr>
+      <tr><td>mem0 <i>(from its docs)</i></td><td><code>pip install mem0ai</code></td><td>Python</td><td>vector store</td><td class="wrap">yes, an LLM extracts memories</td></tr>
+      <tr><td>claude-mem <i>(from its docs)</i></td><td>Claude Code plugin</td><td>Claude Code</td><td>local SQLite</td><td class="wrap">yes, Claude compresses memories</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Speed and size on networkx (128k lines)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>codebase-memory-mcp 0.12.0</th><th>Engram</th></tr></thead>
+    <tbody>
+      <tr><td>Index from scratch</td><td>3.7 s</td><td>2.7 s (code + 1,175 commits)</td></tr>
+      <tr><td>Peak RAM while indexing</td><td>221 MB</td><td>242 MB</td></tr>
+      <tr><td>Index on disk</td><td>88 MB</td><td>2.8 MB</td></tr>
+      <tr><td>Install size</td><td>335 MB binary</td><td>~59 MB (+109 MB Node.js only if missing)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src-line">Scope differs: codebase-memory-mcp also indexes docs and config; Engram indexes source code plus git history. Commands are in <a href="https://github.com/ManojRakshu/engram/blob/main/docs/COMPARISON.md">COMPARISON.md ↗</a></p>
+  <div class="honest">
+    <h3>Where Engram is behind</h3>
+    <ul class="tight">
+      <li><b>Fewer agents wired automatically:</b> 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.</li>
+      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS and Linux x64/arm64 with glibc 2.39+ (including WSL2). Intel Macs and older Linux fall back to Docker or <code>--url</code>. No native Windows.</li>
+      <li><b>Languages:</b> Python, TypeScript and JavaScript.</li>
+      <li><b>Peak indexing RAM</b> is slightly higher (242 MB vs 221 MB).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- §7 -->
+<section class="s" id="install" aria-labelledby="h-install">
+  <h2 id="h-install"><span class="sec">§7</span> Install, use, remove</h2>
+  <div class="cols">
+    <div class="prose">
+      <p>Real output from a fresh user profile whose PATH had only system directories (no Node, Docker or Homebrew):</p>
+<pre>engram: fetching Node.js v22.23.1 (one time)…
+FalkorDB
+  · downloading FalkorDB (FalkorDBLite 0.10.0, one time)…
+  · starting embedded FalkorDB…
+  ✓ running (embedded, ~/.engram/falkordb.sock)
+Agents
+  ✓ Cursor: added to ~/.cursor/mcp.json
+  ✓ `engram` command: ~/.local/bin/engram
+This repo
+  ✓ indexed networkx-networkx: 695 files, 1175 commits in 4.4 s</pre>
+      <p>25 s in total, most of it the two one-time downloads. With Node.js already installed, about 4 s.</p>
+    </div>
+    <div class="prose">
+<pre><span class="c"># the map an agent would get</span>
+engram pack --compact "describe a bug"
+<span class="c"># blast radius: callers, tests, owners</span>
+engram impact src/some/file.py
+<span class="c"># any CLI agent that takes a prompt</span>
+engram run "fix the flaky retry" -- codex exec {prompt}
+<span class="c"># disconnect every agent, stop FalkorDB</span>
+engram setup --remove &amp;&amp; engram db stop</pre>
+      <p>Every feature can be switched off in <code>engram.config.json</code> or with <code>ENGRAM_PACK</code>, <code>ENGRAM_JIT</code>, <code>ENGRAM_MEMORY</code>, <code>ENGRAM_CLAIMS</code> or <code>ENGRAM_HISTORY</code> set to <code>0</code>. Delete <code>~/.engram</code> to remove everything; Engram writes nothing else.</p>
+    </div>
+  </div>
+  <figure style="margin-top:36px">
+    <button class="video" type="button" data-yt="jwso6cm9fqY" style="background-image:url('https://i.ytimg.com/vi/jwso6cm9fqY/hqdefault.jpg')" aria-label="Play the 2-minute Engram demo video"><span>▶ Play the 2-min demo</span></button>
+    <figcaption><b>Fig. 4</b>: the demo, on click, networkx and yt-dlp · <a href="https://youtube.com/shorts/aSS2mSwJzmI">30-second version</a></figcaption>
+  </figure>
+</section>
+
+<!-- FAQ -->
+<section class="s" id="faq" aria-labelledby="h-faq">
+  <h2 id="h-faq"><span class="sec">§8</span> Questions</h2>
+  <details><summary>Does Engram call an LLM?</summary><p>No. Every answer is a parameterised Cypher query on FalkorDB. It adds only the ~200-token map it injects (and ~14 tokens per tool hint), and it works with whatever model your agent uses.</p></details>
+  <details><summary>Why a map and not the code itself?</summary><p>Whatever you inject gets re-read on every later turn. My first version gave the agent 1,600 tokens of code and history, and token use went up. Claude Code has to Read a file before editing it anyway, so pasting code never saved a call. Six lines of exact locations did.</p></details>
+  <details><summary>Do I need Docker or a database server?</summary><p>No. Engram runs <a href="https://docs.falkordb.com/operations/falkordblite/">FalkorDBLite</a>, FalkorDB's own embedded build, pinned and checked against its sha256. It runs as one small server per user on an owner-only Unix socket in <code>~/.engram</code>, shared by every agent on the machine. If it isn't up yet, the agent works as usual and Engram switches on at the next prompt.</p></details>
+  <details><summary>How does it stay current while I edit?</summary><p>Every edit re-indexes that file, and each new prompt re-checks file hashes, so indexing is incremental. Git history is mined for authors and co-change.</p></details>
+  <details><summary>What stops two agents editing the same file?</summary><p>Before an edit, the agent's session claims the file in one Cypher write. If another running session holds it, the edit is blocked with a message saying who has it. Claude Code, pi and any MCP agent share the same claims.</p></details>
+  <details><summary>Why no language servers or embeddings?</summary><p>Language servers want hundreds of MB, and a June 2026 study found LSP tools added 6–118% tokens on code-localization tasks (<a href="https://arxiv.org/abs/2608.13568">arXiv 2608.13568</a>). Bugs here are found by structure (calls, history), and FalkorDB has a vector index if embeddings are ever worth adding.</p></details>
+  <details><summary>Did it ever make things worse?</summary><p>Yes, and it's all written down: the 35/36 miss on click, an early memory that stored the exact test command and confused the next task, and the 1,600-token pack that raised token use. See the honest notes in §4 and the <a href="https://dev.to/manoj_shetty/my-coding-agent-kept-searching-the-same-repo-again-and-again-so-i-gave-it-a-memory-481g">blog post</a>.</p></details>
+  <details><summary>Is it free and open source?</summary><p>Yes, MIT licensed. The source, the benchmark harness and every raw result are on <a href="https://github.com/ManojRakshu/engram">GitHub</a>.</p></details>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/ManojRakshu/engram">GitHub</a>
+      <a href="https://github.com/ManojRakshu/engram/blob/main/docs/CYPHER.md">Cypher</a>
+      <a href="https://github.com/ManojRakshu/engram/blob/main/docs/COMPARISON.md">Comparison</a>
+      <a href="https://github.com/ManojRakshu/engram/tree/main/bench">Benchmark harness</a>
+      <a href="https://youtu.be/jwso6cm9fqY">Video</a>
+      <a href="https://dev.to/manoj_shetty/my-coding-agent-kept-searching-the-same-repo-again-and-again-so-i-gave-it-a-memory-481g">Blog</a>
+      <a href="llms.txt">llms.txt</a>
+    </div>
+    <p>Open source, MIT licensed. Built by Manoj Shetty for Graph Hacks (WeMakeDevs × FalkorDB), October 2026.</p>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('[role=tab]').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('[role=tab]').forEach(function(x){
+      var on=x===t; x.setAttribute('aria-selected',on);
+      document.getElementById(x.getAttribute('aria-controls')).hidden=!on;
+    });
+  });
+});
+document.querySelectorAll('[data-copy]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var txt=b.previousElementSibling.textContent;
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){
+      b.textContent='COPIED'; setTimeout(function(){b.textContent='COPY'},1600);
+    }).catch(function(){ var r=document.createRange(); r.selectNodeContents(b.previousElementSibling); var s=getSelection(); s.removeAllRanges(); s.addRange(r); });
+  });
+});
+document.querySelectorAll('[data-yt]').forEach(function(v){
+  v.addEventListener('click',function(){
+    var f=document.createElement('iframe');
+    f.src='https://www.youtube-nocookie.com/embed/'+v.dataset.yt+'?autoplay=1&rel=0';
+    f.title='Engram demo video'; f.allow='autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen=true;
+    v.replaceChildren(f);
+  },{once:true});
+});
+</script>
+</body>
+</html>

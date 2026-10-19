@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Engram</title>
+  <subtitle>Updates to Engram, a FalkorDB context graph for coding agents.</subtitle>
+  <link href="https://manojrakshu.github.io/engram/feed.xml" rel="self"/>
+  <link href="https://manojrakshu.github.io/engram/"/>
+  <id>https://manojrakshu.github.io/engram/</id>
+  <updated>2026-10-19T00:00:00Z</updated>
+  <author><name>Manoj Shetty</name><uri>https://github.com/ManojRakshu</uri></author>
+  <entry>
+    <title>Engram 0.1.0</title>
+    <link href="https://github.com/ManojRakshu/engram"/>
+    <id>https://manojrakshu.github.io/engram/#v0.1.0</id>
+    <updated>2026-10-18T00:00:00Z</updated>
+    <summary>First release, built for Graph Hacks (WeMakeDevs × FalkorDB). On 144 Claude Code runs over 12 pallets/click bugs: −25% input tokens, −29% tool calls, 35/36 fixed vs 36/36 baseline. Raw data in bench/results.</summary>
+  </entry>
+</feed>
