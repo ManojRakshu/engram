@@ -96,7 +96,16 @@ jobs:
           path: fdb/bin
           key: fdb-bin-${{ env.FALKORDB_TAG }}-${{ github.run_id }}
 
+      - name: Redis build cache
+        id: redis-cache
+        uses: actions/cache@v4
+        with:
+          path: redis-${{ env.REDIS_VERSION }}/src/*.exe
+          key: redis-cygwin-${{ env.REDIS_VERSION }}
+
       - name: Build Redis
+        if: steps.redis-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 15
         run: |
           export PATH=/usr/local/bin:/usr/bin:/bin
           sed -i 's/__GNU_VISIBLE/1/' /usr/include/dlfcn.h
