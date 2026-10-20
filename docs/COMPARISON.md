@@ -96,8 +96,8 @@ Commands: `codebase-memory-mcp cli index_repository --repo-path <repo>` (RAM sam
 - **Fewer agents wired automatically:** 9 versus codebase-memory-mcp's 45. Any MCP client still works with a
   one-line config.
 - **Platforms:** embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64.
-  Intel Macs and older Linux distributions fall back to Docker or `--url`. On Windows, a map takes 0.5–2 s against
-  0.05–0.6 s on Linux and macOS; the results are identical.
+  Intel Macs and older Linux distributions fall back to Docker or `--url`. On Windows, a map takes 0.09–1.1 s against
+  0.02–0.5 s on Linux and macOS; the results are identical.
 - **Benchmark scope:** one model (Haiku) and 18 bugs in two Python repos. networkx has one repeat. The benchmark ran
   on FalkorDB 4.22.1 in Docker; the embedded build is 4.18.3, and the same queries and tests pass on it.
 - **One click miss** (35/36 against 36/36), reported rather than re-run away. The cause is found and fixed (see

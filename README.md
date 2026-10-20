@@ -152,7 +152,7 @@ This repo
   click and networkx loaded. Every agent on the machine shares it, so they share one memory and one set of edit claims.
   It starts on demand (a cold start costs about 50 ms) and saves to disk. FalkorDBLite has no Windows build, so for
   Windows I build FalkorDB v4.18.3 from source ([how](.github/workflows/falkordb-windows.yml),
-  [release](https://github.com/ManojRakshu/engram/releases/tag/falkordb-windows-v4.18.3)). There it listens on
+  [release](https://github.com/ManojRakshu/engram/releases/tag/falkordb-windows-v4.18.3-2)). There it listens on
   loopback with a random password instead of a socket.
 - **Node.js is optional.** The launcher uses your Node 22+, or fetches the official build once, checksum-verified.
 - **Your agent never waits on it.** If FalkorDB isn't up yet, the agent works as usual and Engram switches on at the next prompt.
@@ -172,7 +172,7 @@ or set `FALKORDB_URL`.
 and Windows x64. On other systems, Engram runs FalkorDB in Docker if it's available, or you pass `--url`.
 On every code change, [CI](.github/workflows/cross-os.yml) indexes the same repos on Linux, macOS and Windows and checks that
 the maps, rankings and blast radius agents get are byte-identical, and that the 30 yt-dlp issues score the same.
-Windows is slower today: a map takes 0.5–2 s there against 0.05–0.6 s on Linux and macOS (CI runners).
+Windows is slower: a map takes 0.09–1.1 s there against 0.02–0.5 s on Linux and macOS (CI runners).
 
 **Try it from a terminal:**
 ```bash
