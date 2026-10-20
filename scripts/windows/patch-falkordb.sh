@@ -45,5 +45,8 @@ patch("deps/RediSearch/deps/readies/cmake/cc", '    add_target_linker_flags(${TA
       '    if (NOT CYGWIN)\n        add_target_linker_flags(${TARGET} "-Wl,--enable-new-dtags -Wl,-rpath,\\$ORIGIN")\n    endif()')
 # The Linux debug-symbol split (objcopy --add-gnu-debuglink + strip) leaves a DLL Windows won't load.
 patch("CMakeLists.txt", 'if(UNIX AND NOT APPLE AND (CMAKE_BUILD_TYPE', 'if(UNIX AND NOT APPLE AND NOT CYGWIN AND (CMAKE_BUILD_TYPE')
+# RediSearch carries its own copy of the same thread pool.
+patch("deps/RediSearch/deps/thpool/thpool.c", "#elif defined(__APPLE__) && defined(__MACH__)\n  pthread_setname_np(thread_name);",
+      "#elif defined(__APPLE__) && defined(__MACH__)\n  pthread_setname_np(thread_name);\n#elif defined(__CYGWIN__)\n  pthread_setname_np(pthread_self(), thread_name);")
 print("patched")
 PY
