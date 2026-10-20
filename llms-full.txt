@@ -198,7 +198,7 @@ Scope differs: codebase-memory-mcp also indexes docs and config; Engram indexes 
 
 ### Where Engram is behind
 - Fewer agents wired automatically: 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.
-- Platforms: embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or `--url`. Windows gives identical results but is slower today: a map takes 0.5–2 s, against 0.05–0.6 s on Linux and macOS.
+- Platforms: embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or `--url`. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.
 - Languages: Python, TypeScript and JavaScript.
 - Peak indexing RAM is slightly higher (242 MB vs 221 MB).
 

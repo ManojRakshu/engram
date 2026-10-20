@@ -632,7 +632,7 @@ RETURN l.owner = $me AS got</pre>
     <h3>Where Engram is behind</h3>
     <ul class="tight">
       <li><b>Fewer agents wired automatically:</b> 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.</li>
-      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or <code>--url</code>. Windows gives identical results but is slower today: a map takes 0.5–2 s, against 0.05–0.6 s on Linux and macOS.</li>
+      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or <code>--url</code>. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.</li>
       <li><b>Languages:</b> Python, TypeScript and JavaScript.</li>
       <li><b>Peak indexing RAM</b> is slightly higher (242 MB vs 221 MB).</li>
     </ul>
