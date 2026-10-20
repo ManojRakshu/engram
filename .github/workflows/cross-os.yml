@@ -57,6 +57,9 @@ jobs:
           get networkx/networkx networkx "$NETWORKX_SHA"
           get yt-dlp/yt-dlp yt-dlp "$YTDLP_SHA"
 
+      - name: Start the embedded FalkorDB
+        run: npx tsx src/cli.ts db start
+
       - name: What agents are handed, for every benchmark task
         run: npx tsx scripts/e2e/snapshot.ts out click=t/click=bench/tasks.click.json networkx=t/networkx=bench/tasks.networkx.json
 
