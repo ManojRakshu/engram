@@ -82,6 +82,9 @@ export class RepoGraph {
     const opts = { params: params as never, TIMEOUT: 5000 };
     try {
       const res = ro ? await this.g.roQuery<T>(cypher, opts) : await this.g.query<T>(cypher, opts);
+      // FalkorDB's own execution time, to tell server time from waiting and client time.
+      const exec = res.metadata?.find((m) => m.startsWith("Query internal execution time"));
+      if (exec) record(`${name}·server`, Number.parseFloat(exec.split(": ")[1]));
       return (res.data ?? []) as T[];
     } catch (e) {
       // A graph is created on first write; reading one that doesn't exist yet is just "no rows".

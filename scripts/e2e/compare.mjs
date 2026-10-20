@@ -49,12 +49,12 @@ for (const os of oses)
 for (const repo of Object.keys(JSON.parse(read(oses[0], "timings.json")))) {
   const t = Object.fromEntries(oses.map((os) => [os, JSON.parse(read(os, "timings.json"))[repo]]));
   if (!t[oses[0]].queries) continue;
-  md.push("", `#### ${repo}: time per query, all tasks (ms total · calls · p50)`, "", `| query | ${oses.join(" | ")} |`, `|---|${oses.map(() => "---").join("|")}|`);
+  md.push("", `#### ${repo}: time per query, all tasks (ms total · calls · p50 · of which FalkorDB executing)`, "", `| query | ${oses.join(" | ")} |`, `|---|${oses.map(() => "---").join("|")}|`);
   md.push(`| *all maps (wall clock)* | ${oses.map((os) => t[os].packTotalMs).join(" | ")} |`);
   const names = [...new Set(oses.flatMap((os) => Object.keys(t[os].queries)))];
   const worst = (q) => Math.max(...oses.map((os) => t[os].queries[q]?.total ?? 0));
   for (const q of names.sort((a, b) => worst(b) - worst(a)).slice(0, 12))
-    md.push(`| ${q} | ${oses.map((os) => { const s = t[os].queries[q]; return s ? `${Math.round(s.total)} · ${s.n} · ${s.p50}` : "–"; }).join(" | ")} |`);
+    md.push(`| ${q} | ${oses.map((os) => { const s = t[os].queries[q]; return s ? `${Math.round(s.total)} · ${s.n} · ${s.p50} · ${Math.round(s.server ?? 0)}` : "–"; }).join(" | ")} |`);
 }
 
 const text = md.join("\n");

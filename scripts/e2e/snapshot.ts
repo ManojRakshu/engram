@@ -38,7 +38,12 @@ for (const spec of suites) {
   }
   packMs.sort((a, b) => a - b);
   // Where the time goes: every query the maps and blast radius ran, by name (the rest is Node).
-  const queries = Object.fromEntries(Object.entries(latencyStats()).map(([q, s]) => [q, { n: s.n, p50: s.p50, total: s.total }]));
+  const stats = latencyStats();
+  const queries = Object.fromEntries(
+    Object.entries(stats)
+      .filter(([q]) => !q.endsWith("·server"))
+      .map(([q, s]) => [q, { n: s.n, p50: s.p50, total: s.total, server: stats[`${q}·server`]?.total }]),
+  );
   const packTotalMs = Math.round(packMs.reduce((a, b) => a + b, 0));
   timings[name] = { indexMs, files: code.files, packMedianMs: packMs[Math.floor(packMs.length / 2)], packMaxMs: packMs.at(-1), packTotalMs, queries };
 }
