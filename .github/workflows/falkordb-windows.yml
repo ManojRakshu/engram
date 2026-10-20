@@ -133,16 +133,35 @@ jobs:
           zip -q -r $d.zip $d
           sha256sum $d.zip | tee $d.zip.sha256
 
-      - name: Backtrace of the full-text index call (gdb)
+      - name: Where the full-text index call crashes
         continue-on-error: true
-        timeout-minutes: 6
+        timeout-minutes: 8
         run: |
           export PATH=/usr/local/bin:/usr/bin:/bin
-          d=falkordb-windows-x64
+          d=$(pwd)/falkordb-windows-x64
           so="$(pwd)/fdb/bin/linux-x64-release/falkordb.so" # unstripped, with debug info
-          printf '%s\n' "set pagination off" "handle SIGSEGV stop print" "run" "bt 40" "info registers rip" "x/8i \$pc-16" "continue" "bt 40" "kill" > gdb.cmds
-          (sleep 8; $d/redis-cli.exe -p 6392 GRAPH.QUERY g "CREATE (:S {name:'f'})"; $d/redis-cli.exe -p 6392 GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('S', 'name')"; sleep 20; $d/redis-cli.exe -p 6392 SHUTDOWN NOSAVE) &
-          timeout 300 gdb -batch -x gdb.cmds --args $d/redis-server.exe --port 6392 --save "" --loadmodule "$so" 2>&1 | grep -v "^\[New Thread\|^\[Thread .* exited" | tail -120
+          q() { timeout 20 $d/redis-cli.exe -p $1 GRAPH.QUERY g "$2" || true; }
+          base=$(objdump -p "$so" | awk '/^ImageBase/ {print $2}'); echo "ImageBase $base"
+          echo "== 1. Cygwin stackdump (Redis' own crash handler off)"
+          mkdir -p dump && cd dump
+          ($d/redis-server.exe --port 6393 --save "" --crash-log-enabled no --loadmodule "$so" > srv.log 2>&1 &)
+          sleep 8; q 6393 "CREATE (:S {name:'f'})"; q 6393 "CALL db.idx.fulltext.createNodeIndex('S', 'name')"; sleep 5
+          tail -3 srv.log; ls -la
+          if ls *.stackdump >/dev/null 2>&1; then
+            cat *.stackdump
+            # module+0xOFFSET lines -> function and source line in the debug build
+            grep -o 'falkordb\.so+0x[0-9a-fA-F]*' *.stackdump | while read -r m; do
+              off=${m#*+}; printf '%s  ' "$m"; addr2line -f -C -e "$so" $(printf '0x%x' $((base + off))) | paste -sd' '
+            done
+          fi
+          cd ..
+          echo "== 2. gdb attached to the running server"
+          ($d/redis-server.exe --port 6394 --save "" --pidfile "$(pwd)/r.pid" --loadmodule "$so" > srv2.log 2>&1 &)
+          sleep 8; pid=$(cat r.pid); echo "pid $pid"
+          printf '%s\n' "set pagination off" "handle SIGSEGV stop print" "continue" "thread apply all bt 25" "detach" > gdb.cmds
+          (sleep 6; q 6394 "CREATE (:S {name:'f'})"; q 6394 "CALL db.idx.fulltext.createNodeIndex('S', 'name')") &
+          timeout 120 gdb -batch -x gdb.cmds -p $pid 2>&1 | grep -v "^\[New Thread\|^\[Thread .* exited" | tail -150 || true
+          kill $pid 2>/dev/null || true
 
       - name: Smoke test (plain Windows, no Cygwin on PATH)
         shell: pwsh
