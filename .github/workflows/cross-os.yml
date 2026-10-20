@@ -3,12 +3,17 @@
 name: cross-os
 
 on:
+  workflow_call:
+    inputs:
+      falkordb_run:
+        type: string
+        required: true
   push:
     branches: [main, windows]
     paths: [src/**, plugin/**, bench/**, scripts/e2e/**, install.sh, install.ps1, .github/workflows/cross-os.yml]
 
 concurrency:
-  group: cross-os
+  group: cross-os-${{ inputs.falkordb_run || 'push' }}
   cancel-in-progress: true
 
 permissions:
@@ -40,6 +45,15 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
+
+      - name: FalkorDB for Windows (the new build, when called by falkordb-windows)
+        if: runner.os == 'Windows' && inputs.falkordb_run
+        uses: actions/download-artifact@v4
+        with:
+          name: falkordb-windows-x64
+          path: ${{ runner.temp }}/fdb
+      - if: runner.os == 'Windows' && inputs.falkordb_run
+        run: echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP\\fdb\\falkordb-windows-x64.zip" >> "$GITHUB_ENV"
 
       - name: Benchmark repos at their pinned commits
         run: |
@@ -78,6 +92,7 @@ jobs:
 
   # The Windows end-to-end test (engram-windows-e2e.yml), step for step, on Linux and macOS.
   e2e:
+    if: ${{ !inputs.falkordb_run }}
     strategy:
       fail-fast: false
       matrix:

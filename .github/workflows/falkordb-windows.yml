@@ -5,7 +5,7 @@ name: falkordb-windows
 on:
   push:
     branches: [main, windows]
-    paths: [.github/workflows/falkordb-windows.yml, scripts/windows/patch-falkordb.sh]
+    paths: [.github/workflows/falkordb-windows.yml, scripts/windows/patch-falkordb.sh, scripts/windows/patch-redis.sh]
   workflow_dispatch:
 
 # One build at a time; a newer push replaces a build still running.
@@ -106,7 +106,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: redis-${{ env.REDIS_VERSION }}/src/*.exe
-          key: redis-cygwin-v2-${{ env.REDIS_VERSION }}-usable-size
+          key: redis-cygwin-v3-${{ env.REDIS_VERSION }}-${{ hashFiles('scripts/windows/patch-redis.sh') }}
 
       - name: Build Redis
         if: steps.redis-cache.outputs.cache-hit != 'true'
@@ -117,6 +117,7 @@ jobs:
           curl -fsSL https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz | tar xz
           cd redis-$REDIS_VERSION
           sed -i 's/all: \(.*\) module_tests$/all: \1/' src/Makefile
+          bash ../scripts/windows/patch-redis.sh
           # USE_MALLOC_USABLE_SIZE: like glibc builds, no 8-byte size prefix on each block, so modules get
           # 16-byte-aligned memory (SSE code in RediSearch faults on 8-byte-aligned blocks). _GNU_SOURCE from
           # the start, as on Linux, so the late define in zmalloc.h doesn't hide mkostemp & co.
@@ -144,6 +145,7 @@ jobs:
       - name: Smoke test (plain Windows, no Cygwin on PATH)
         shell: pwsh
         run: |
+          $node = (Get-Command node).Source
           $env:PATH = "C:\Windows\System32;C:\Windows"
           $d = "$env:GITHUB_WORKSPACE\falkordb-windows-x64"
           & "$d\redis-server.exe" --version
@@ -158,6 +160,8 @@ jobs:
           & $cli -p 6390 GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('Symbol', 'name')"
           & $cli -p 6390 GRAPH.QUERY g "CALL db.idx.fulltext.queryNodes('Symbol', 'f') YIELD node RETURN node.name"
           & $cli -p 6390 GRAPH.QUERY g "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score RETURN node.name, score"
+          & $node scripts/windows/latency.mjs 6390 "this build" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          if ($LASTEXITCODE) { throw "latency probe failed" }
           & $cli -p 6390 BGSAVE
           Start-Sleep -Seconds 4
           & $cli -p 6390 LASTSAVE
@@ -170,6 +174,21 @@ jobs:
           if (-not ($r2 -match '^1$')) { throw "graph not restored from RDB" }
           & $cli -p 6390 SHUTDOWN NOSAVE
 
+      - name: Latency of the published release, same runner (for comparison)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = (Get-Content src/embedded.ts | Select-String 'releases/download/([^/]+)/').Matches[0].Groups[1].Value
+          gh release download $tag -R $env:GITHUB_REPOSITORY -p falkordb-windows-x64.zip -D "$env:RUNNER_TEMP\rel"
+          Expand-Archive "$env:RUNNER_TEMP\rel\falkordb-windows-x64.zip" "$env:RUNNER_TEMP\rel"
+          $d = "$env:RUNNER_TEMP\rel\falkordb-windows-x64"
+          Start-Process -NoNewWindow -FilePath "$d\redis-server.exe" -ArgumentList "--port 6392 --bind 127.0.0.1 --save """" --loadmodule falkordb.so" -WorkingDirectory $d
+          Start-Sleep -Seconds 4
+          node scripts/windows/latency.mjs 6392 "release $tag" | Tee-Object -Append $env:GITHUB_STEP_SUMMARY
+          & "$d\redis-cli.exe" -p 6392 SHUTDOWN NOSAVE
+
       - uses: actions/upload-artifact@v4 # only after the smoke test passed
         with:
           name: falkordb-windows-x64
@@ -180,5 +199,12 @@ jobs:
   e2e:
     needs: build
     uses: ./.github/workflows/engram-windows-e2e.yml
+    with:
+      falkordb_run: ${{ github.run_id }}
+
+  # Same maps and accuracy as Linux and macOS with this build, and how long the maps take.
+  cross-os:
+    needs: build
+    uses: ./.github/workflows/cross-os.yml
     with:
       falkordb_run: ${{ github.run_id }}
