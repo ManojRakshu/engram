@@ -117,8 +117,9 @@ jobs:
           cd redis-$REDIS_VERSION
           sed -i 's/all: \(.*\) module_tests$/all: \1/' src/Makefile
           # USE_MALLOC_USABLE_SIZE: like glibc builds, no 8-byte size prefix on each block, so modules get
-          # 16-byte-aligned memory (SSE code in RediSearch faults on 8-byte-aligned blocks).
-          make CFLAGS="-Wno-char-subscripts -O0 -DUSE_MALLOC_USABLE_SIZE" -j$(nproc)
+          # 16-byte-aligned memory (SSE code in RediSearch faults on 8-byte-aligned blocks). _GNU_SOURCE from
+          # the start, as on Linux, so the late define in zmalloc.h doesn't hide mkostemp & co.
+          make CFLAGS="-Wno-char-subscripts -O0 -D_GNU_SOURCE -DUSE_MALLOC_USABLE_SIZE" -j$(nproc)
 
       - name: Package
         run: |
