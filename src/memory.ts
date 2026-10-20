@@ -209,10 +209,15 @@ export async function inbox(g: RepoGraph, sessionId: string) {
 
 export async function impact(g: RepoGraph, target: string, depth = 3) {
   const d = Math.max(1, Math.min(4, Math.floor(depth)));
+  // A target is a symbol id (path#name) or a file path. Matching one indexed property, rather than
+  // `id = $target OR path = $target`, lets FalkorDB use the index instead of scanning every node.
+  const isSymbol = target.includes("#");
+  const targets = isSymbol ? "MATCH (t:Symbol {id: $target})" : "MATCH (t:Symbol {path: $target})";
+  const files = isSymbol ? "MATCH (:Symbol {id: $target})<-[:DEFINES]-(f:File)" : "MATCH (f:File {path: $target})";
   const [callers, tests, coChange, owners, lessons] = await Promise.all([
     g.read<{ id: string; hops: number; path: string[] }>(
       "impact.callers",
-      `MATCH (t:Symbol) WHERE t.id = $target OR (t.path = $target)
+      `${targets} WITH t
        MATCH p = (c:Symbol)-[:CALLS*1..${d}]->(t) WHERE NOT c.isTest
        WITH c, min(length(p)) AS hops, collect(p)[0] AS sp
        RETURN c.id AS id, hops, [n IN nodes(sp) | n.qualname] AS path
@@ -221,27 +226,27 @@ export async function impact(g: RepoGraph, target: string, depth = 3) {
     ),
     g.read<{ test: string }>(
       "impact.tests",
-      `MATCH (t:Symbol) WHERE t.id = $target OR (t.path = $target)
+      `${targets} WITH t
        MATCH (c:Symbol)-[:CALLS*1..${d}]->(t) WHERE c.isTest
        RETURN DISTINCT c.path AS test LIMIT 15`,
       { target },
     ),
     g.read<{ path: string; count: number }>(
       "impact.cochange",
-      `MATCH (f:File) WHERE f.path = $target OR (f)-[:DEFINES]->(:Symbol {id: $target})
+      `${files}
        MATCH (f)-[k:CO_CHANGES]-(o:File) RETURN o.path AS path, k.count AS count ORDER BY k.count DESC LIMIT 6`,
       { target },
     ),
     g.read<{ name: string; commits: number }>(
       "impact.owners",
-      `MATCH (f:File) WHERE f.path = $target OR (f)-[:DEFINES]->(:Symbol {id: $target})
+      `${files}
        MATCH (f)<-[:TOUCHED]-(c:Commit)<-[:AUTHORED]-(p:Person)
        RETURN p.name AS name, count(c) AS commits ORDER BY commits DESC LIMIT 3`,
       { target },
     ),
     g.read<{ text: string }>(
       "impact.lessons",
-      `MATCH (l:Lesson)-[:ABOUT]->(x) WHERE x.path = $target OR x.id = $target OR (x:File AND x.path = $file)
+      `MATCH (l:Lesson) WITH l MATCH (l)-[:ABOUT]->(x) WHERE x.path = $target OR x.id = $target OR (x:File AND x.path = $file)
        RETURN l.text AS text ORDER BY l.createdAt DESC LIMIT 5`,
       { target, file: target.split("#")[0] },
     ),

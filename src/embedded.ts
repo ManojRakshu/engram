@@ -14,6 +14,7 @@ import { inflateRawSync } from "node:zlib";
  * .github/workflows/falkordb-windows.yml); there it listens on loopback TCP with a random password.
  */
 const WHEEL = "0.10.0"; // FalkorDBLite 0.10.0 = FalkorDB v4.18.3
+const WIN_BUILD = "4.18.3-2"; // our Windows build: FalkorDB v4.18.3, release falkordb-windows-v<WIN_BUILD>
 const PYPI = "https://files.pythonhosted.org/packages";
 const BUILDS: Record<string, { url: string; sha256: string }> = {
   "darwin-arm64": {
@@ -29,8 +30,8 @@ const BUILDS: Record<string, { url: string; sha256: string }> = {
     sha256: "bfe1f47ae03decdc0ad111ec82606bac82ee6cdd7fea04cbcff1283608cc2d2e",
   },
   "win32-x64": {
-    url: "https://github.com/ManojRakshu/engram/releases/download/falkordb-windows-v4.18.3/falkordb-windows-x64.zip",
-    sha256: "9e5ebd9b06ff3765725432dcabe44f4edee37adff5c9a3b6a29098c556c01cca",
+    url: `https://github.com/ManojRakshu/engram/releases/download/falkordb-windows-v${WIN_BUILD}/falkordb-windows-x64.zip`,
+    sha256: "0a4a89e77c895b3e28600d48900b4cb2bff352f34167aa35e73a41b9169493ff",
   },
 };
 const WIN = process.platform === "win32";
@@ -40,7 +41,7 @@ const binPath = (root: string) => (WIN ? path.join(root, "falkordb-windows-x64")
 const serverExe = (root: string) => path.join(binPath(root), WIN ? "redis-server.exe" : "redis-server");
 
 export const engramHome = () => process.env.ENGRAM_HOME ?? path.join(os.homedir(), ".engram");
-const binDir = () => path.join(engramHome(), WIN ? "falkordb-windows-4.18.3" : `falkordb-${WHEEL}`);
+const binDir = () => path.join(engramHome(), WIN ? `falkordb-windows-${WIN_BUILD}` : `falkordb-${WHEEL}`);
 const dataDir = () => path.join(engramHome(), "data");
 const logFile = () => path.join(engramHome(), "falkordb.log");
 const pidFile = () => path.join(engramHome(), "falkordb.pid");
@@ -55,7 +56,7 @@ export async function installBinaries(log: (s: string) => void = () => {}) {
   const build = embeddedBuild();
   if (!build) throw new Error(`no embedded FalkorDB build for ${process.platform}-${process.arch}`);
   if (binariesReady()) return;
-  log(`downloading FalkorDB (${WIN ? "FalkorDB 4.18.3 for Windows" : `FalkorDBLite ${WHEEL}`}, one time)…`);
+  log(`downloading FalkorDB (${WIN ? `FalkorDB ${WIN_BUILD} for Windows` : `FalkorDBLite ${WHEEL}`}, one time)…`);
   // ENGRAM_FALKORDB_ZIP: a local copy of the build (offline installs, CI before a release exists).
   let zip: Buffer | undefined = process.env.ENGRAM_FALKORDB_ZIP ? readFileSync(process.env.ENGRAM_FALKORDB_ZIP) : undefined;
   for (let attempt = 1; !zip; attempt++) {

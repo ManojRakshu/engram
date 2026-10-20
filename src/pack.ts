@@ -340,7 +340,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   if (tiny.length) {
     const delegates = await g.read<Omit<PackItem, "score" | "why"> & { wrapper: string }>(
       "pack.delegate",
-      `UNWIND $ids AS id MATCH (w:Symbol {id: id})-[:CALLS]->(s:Symbol)
+      `UNWIND $ids AS id MATCH (w:Symbol {id: id}) WITH w MATCH (w)-[:CALLS]->(s:Symbol)
        WHERE s.path = w.path AND NOT s.isTest AND s.kind <> 'class'
        WITH w, s ORDER BY s.endLine - s.startLine DESC
        WITH w, collect(s)[0] AS s
@@ -370,7 +370,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     top.length
       ? g.read<{ t: string }>(
           "pack.tests",
-          `UNWIND $ids AS id MATCH (s:Symbol {id: id})<-[:CALLS]-(t:Symbol) WHERE t.isTest
+          `UNWIND $ids AS id MATCH (s:Symbol {id: id}) WITH s MATCH (s)<-[:CALLS]-(t:Symbol) WHERE t.isTest
            RETURN DISTINCT t.path + '::' + t.qualname AS t LIMIT 8`,
           { ids: top.slice(0, 3).map((i) => i.id) },
         )
@@ -388,7 +388,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
     topPaths.length
       ? g.read<{ a: string; b: string; count: number }>(
           "pack.cochange",
-          `UNWIND $paths AS p MATCH (f:File {path: p})-[k:CO_CHANGES]-(o:File)
+          `UNWIND $paths AS p MATCH (f:File {path: p}) WITH p, f MATCH (f)-[k:CO_CHANGES]-(o:File)
            WHERE NOT o.path IN $paths AND k.weight >= 0.3
            RETURN p AS a, o.path AS b, k.count AS count ORDER BY k.count DESC LIMIT 4`,
           { paths: topPaths },
@@ -401,7 +401,7 @@ export async function buildPack(g: RepoGraph, root: string, task: string, opts: 
   if (items.length) {
     const nexts = await g.read<{ id: string; callees: string[] }>(
       "pack.callees",
-      `UNWIND $ids AS id MATCH (s:Symbol {id: id})-[:CALLS]->(c:Symbol) WHERE NOT c.isTest
+      `UNWIND $ids AS id MATCH (s:Symbol {id: id}) WITH s MATCH (s)-[:CALLS]->(c:Symbol) WHERE NOT c.isTest
        WITH s, c ORDER BY c.path = s.path DESC, coalesce(c.rank, 0) DESC
        RETURN s.id AS id, collect(c.qualname + ' (' + c.path + ':' + toString(c.startLine) + ')')[0..2] AS callees`,
       { ids: items.slice(0, 3).map((i) => i.id) },

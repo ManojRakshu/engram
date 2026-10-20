@@ -180,7 +180,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = (Get-Content src/embedded.ts | Select-String 'releases/download/([^/]+)/').Matches[0].Groups[1].Value
+          $tag = "falkordb-windows-v" + (Get-Content src/embedded.ts | Select-String 'WIN_BUILD = "([^"]+)"').Matches[0].Groups[1].Value
           gh release download $tag -R $env:GITHUB_REPOSITORY -p falkordb-windows-x64.zip -D "$env:RUNNER_TEMP\rel"
           Expand-Archive "$env:RUNNER_TEMP\rel\falkordb-windows-x64.zip" "$env:RUNNER_TEMP\rel"
           $d = "$env:RUNNER_TEMP\rel\falkordb-windows-x64"
