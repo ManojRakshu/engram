@@ -1,6 +1,6 @@
 // Start Engram's MCP server exactly as an agent's config says (command + args), from inside a repo,
 // and check the tools answer. Raw JSON-RPC over stdio, so it needs nothing installed.
-//   node e2e-mcp.mjs <agent> <config file> <repo dir>
+//   node mcp-check.mjs <agent> <config file> <repo dir>
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 

@@ -1,0 +1,162 @@
+# Engram behaves the same on Linux, macOS and Windows: the same maps for the benchmark tasks (byte for byte),
+# the same accuracy on 30 real yt-dlp issues, and the same end-to-end behaviour for every way an agent connects.
+name: cross-os
+
+on:
+  push:
+    branches: [windows]
+    paths: [src/**, plugin/**, bench/**, scripts/e2e/**, install.sh, install.ps1, .github/workflows/cross-os.yml]
+
+concurrency:
+  group: cross-os
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  CLICK_SHA: 2247b35ea1c47c727d7a06e51fa280e12a863ff6
+  NETWORKX_SHA: 6da4704cbf32ba6f50f6d9c46cc0a071e3a87985
+  YTDLP_SHA: ebf0c0f61e3e578db26b45eb24d643f1a64bf17f
+
+jobs:
+  results:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Git like a default Windows install (CRLF checkouts)
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+
+      - name: FalkorDB for Windows (newest build that passed the smoke test)
+        if: runner.os == 'Windows'
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=falkordb-windows-x64&per_page=1" -q '.artifacts[0].workflow_run.id')
+          gh run download "$run" -R "$GITHUB_REPOSITORY" -n falkordb-windows-x64 -D "$RUNNER_TEMP/fdb"
+          echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP\\fdb\\falkordb-windows-x64.zip" >> "$GITHUB_ENV"
+
+      - name: Benchmark repos at their pinned commits
+        run: |
+          get() { git clone -q "https://github.com/$1.git" "t/$2" && git -C "t/$2" checkout -q --force "$3"; }
+          get pallets/click click "$CLICK_SHA"
+          get networkx/networkx networkx "$NETWORKX_SHA"
+          get yt-dlp/yt-dlp yt-dlp "$YTDLP_SHA"
+
+      - name: What agents are handed, for every benchmark task
+        run: npx tsx scripts/e2e/snapshot.ts out click=t/click=bench/tasks.click.json networkx=t/networkx=bench/tasks.networkx.json
+
+      - name: Accuracy on 30 real yt-dlp issues (no LLM)
+        run: |
+          npx tsx src/cli.ts index --fresh --root t/yt-dlp --repo xos-ytdlp
+          rm -f bench/results/realworld.json
+          npx tsx bench/realworld.ts t/yt-dlp xos-ytdlp bench/data/yt-dlp-issues.json "$RUNNER_OS" | tail -2
+          cp bench/results/realworld.json out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ runner.os }}
+          path: out
+
+  compare:
+    needs: results
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: res
+      - run: node scripts/e2e/compare.mjs res "$GITHUB_STEP_SUMMARY"
+
+  # The Windows end-to-end test (engram-windows-e2e.yml), step for step, on Linux and macOS.
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEMO: ${{ github.workspace }}/../demo-repo
+    steps:
+      - uses: actions/checkout@v4
+      - name: Demo repo
+        run: sh scripts/e2e/demo-repo.sh "$DEMO"
+
+      - name: Install (no Node on PATH, no Docker)
+        run: |
+          git checkout -B main
+          nonode=$(echo "$PATH" | tr ':' '\n' | while read -r d; do [ -x "$d/node" ] || echo "$d"; done | paste -sd: -)
+          mkdir -p ~/.cursor ~/.codex ~/.gemini ~/.local/bin
+          cd "$DEMO"
+          PATH="$HOME/.local/bin:$nonode" sh -c 'command -v node && exit 1; ENGRAM_REPO="file://$GITHUB_WORKSPACE" sh "$GITHUB_WORKSPACE/install.sh"'
+          ls ~/.engram
+
+      - name: CLI (engram from ~/.local/bin)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd "$DEMO"
+          engram pack "the discount is applied twice on the invoice total"
+          engram find apply_discount | tee /dev/stderr | grep -q billing/discount.py
+          engram impact billing/discount.py
+          engram why billing/discount.py
+
+      - name: MCP, as each agent's config starts it
+        run: |
+          node=~/.engram/node-v22.23.1/bin/node
+          $node scripts/e2e/mcp-check.mjs cursor ~/.cursor/mcp.json "$DEMO"
+          $node scripts/e2e/mcp-check.mjs codex ~/.codex/config.toml "$DEMO"
+          $node scripts/e2e/mcp-check.mjs gemini ~/.gemini/settings.json "$DEMO"
+
+      - name: engram run with an npm-installed CLI agent
+        run: |
+          npm install -g --prefix "$HOME/.npm-global" ./scripts/e2e/fake-agent
+          export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH" FAKE_AGENT_OUT="$RUNNER_TEMP/fake-agent-prompt.txt"
+          (cd "$DEMO" && engram run "the discount is applied twice on the invoice total" -- fake-agent "{prompt}")
+          cat "$FAKE_AGENT_OUT"
+          grep -q "discount\.py" "$FAKE_AGENT_OUT" && [ "$(wc -l < "$FAKE_AGENT_OUT")" -ge 2 ]
+          git -C "$DEMO" checkout -- .
+
+      - name: Claude Code (real CLI, scripted API) through the Engram plugin
+        env:
+          ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+          ANTHROPIC_API_KEY: sk-ant-mock
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          export PATH="$HOME/.local/bin:$PATH" ENGRAM_HOOK_LOG="$RUNNER_TEMP/hooks.jsonl"
+          cd "$DEMO"
+          engram setup --agents claude --no-index
+          claude plugin list
+          ~/.engram/node-v22.23.1/bin/node "$GITHUB_WORKSPACE/scripts/e2e/mock-anthropic.mjs" "$DEMO/billing/discount.py" "return base * (1 - pct)" "return base * (1 - clamp(pct))" > "$RUNNER_TEMP/mock.log" 2>&1 &
+          sleep 2
+          claude -p "the discount is applied twice on the invoice total" --dangerously-skip-permissions --output-format json
+          echo "---- mock API"; cat "$RUNNER_TEMP/mock.log"
+          echo "---- hooks"; cat "$ENGRAM_HOOK_LOG"
+          for e in UserPromptSubmit PreToolUse PostToolUse Stop; do grep -q "\"event\":\"$e\"" "$ENGRAM_HOOK_LOG" || { echo "hook $e never ran"; exit 1; }; done
+          grep -q "ctx=yes" "$RUNNER_TEMP/mock.log" || { echo "Engram's context never reached the model"; exit 1; }
+          grep -q "clamp(pct))" billing/discount.py
+
+      - name: Memory survives a restart (db stop saves, db start loads)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd "$DEMO"
+          engram db stop
+          engram db start
+          engram why billing/discount.py | tee /dev/stderr | grep -q claude-code

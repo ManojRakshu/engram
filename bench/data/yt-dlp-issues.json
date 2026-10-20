@@ -1,0 +1,348 @@
+{
+ "repo": "yt-dlp/yt-dlp",
+ "base": "ebf0c0f61e3e578db26b45eb24d643f1a64bf17f",
+ "source": "GitHub issues closed by yt-dlp fixes after the base commit (title + description as the reporter wrote them)",
+ "issues": [
+  {
+   "sha": "7fdc46d01619afbb2371b0465d6830602013148f",
+   "subject": "[ie/youtube] Fix PO token sanitization for Python 3.15 (#16884)",
+   "issues": [
+    "16876"
+   ],
+   "issue": "16876",
+   "title": "Test failures with yt-dlp 2026.03.17 and Python 3.15.0b2",
+   "desc": "We are working on rebuilding all Python packages in Fedora Linux for Python 3.15.0b2. This part of our effort to catch issues and work with upstream projects to resolve them before new Python versions become GA.\n\nThere are currently a couple test failures related to PO tokens when running pytest with Python 3.15.0b2 and yt-dlp 2026.03.17. They are reproduced below. See https://kojipkgs.fedoraproject.org//work/tasks/2982/146232982/build.log for full logs (search for \"/usr/bin/pytest\" to find the pytest run)."
+  },
+  {
+   "sha": "72ac62051593184552733e353da4a8cb8ec214ed",
+   "subject": "[ie/reddit] Fix unauthenticated extraction (#16839)",
+   "issues": [
+    "16877"
+   ],
+   "issue": "16877",
+   "title": "[reddit] Download requires new javascript challenge or resulting cookie (Error: \"Account authentication is required\", or, failed to parse JSON)",
+   "desc": "For a couple days now, when attempting to download any reddit video, I get the \"Account authentication is required\" error message. This is thrown whenever the JSON metadata cannot be parsed (presumably because it's actually HTML in this case), therefor, this echoes the issue spam of #9714, #9912, #10107, and #10924 from people who's IP addresses got flagged as suspicious and therefor needed to log in to view the content. Thing is, I haven't really been hammering reddit much at all, nor am I connecting from a datacenter IP; but more importantly, opening the link in a browser plays the video just fine. What's going on?\n\n#### Clues:\n- If I navigate to the video in the browser and subsequently try to download the video with `--cookies-from-browser`, it works. With a clean cookie jar, it doesn'"
+  },
+  {
+   "sha": "70050a626265922072cc56f69519214c47dbcad6",
+   "subject": "[ie/thisoldhouse] Fix extractor (#16909)",
+   "issues": [
+    "16359"
+   ],
+   "issue": "16359",
+   "title": "This Old House No Longer Recognized URL",
+   "desc": "This happens every once in awhile, they have change the backend url and is no longer able to decipher using .py file."
+  },
+  {
+   "sha": "bc90c36b139c87cdc59399561dc1650198047a72",
+   "subject": "[ie/onsen] Fix extraction (#16830)",
+   "issues": [
+    "16674"
+   ],
+   "issue": "16674",
+   "title": "[onsen.ag] Unable to Download, 403 Forbidden",
+   "desc": "Unable to download, 403 Forbidden. \nEven things that do not require log in are blocked."
+  },
+  {
+   "sha": "1a1481e89b28ff1bf3f00eda00a66071f8caba9f",
+   "subject": "[ie/iwara] Fix extractors (#16014)",
+   "issues": [
+    "13672",
+    "16009",
+    "16146"
+   ],
+   "issue": "13672",
+   "title": "iwara.tv extractors broken due to Cloudflare",
+   "desc": ""
+  },
+  {
+   "sha": "a541df1ea5a593abf3ceaf94ed806e4b52a2c459",
+   "subject": "[ie/bandcamp:weekly] Fix extractor (#16925)",
+   "issues": [
+    "16924"
+   ],
+   "issue": "16924",
+   "title": "[Bandcamp:weekly] Extractor error 'compiledTrack'",
+   "desc": "A new extractor error"
+  },
+  {
+   "sha": "e47691215f75fe7e9684080d17fadf340c9a8450",
+   "subject": "Fix `allow-unsafe-ext` compat option (#16920)",
+   "issues": [
+    "16919"
+   ],
+   "issue": "16919",
+   "title": "compat-options allow-unsafe-ext errors yt-dlp",
+   "desc": "Additional yt-dlp nightly log\n`yt-dlp_night -v -f 244+251 https://www.youtube.com/watch?v=m9xqO9kKqyk\n[debug] Command-line config: ['-v', '-f', '244+251', 'https://www.youtube.com/watch?v=m9xqO9kKqyk']\n[debug] User config \"/home/user/.config/yt-dlp/config\": ['--hls-split-discontinuity', '--socket-timeout', '10', '-r', '15M', '-R', '100', '-P', 'temp:./tmp', '--fixup', 'never', '--concat-playlist', 'never', '--cookies-from-browser', 'chromium', '--compat-options', 'allow-unsafe-ext', '--xattrs']\n[debug] Encodings: locale UTF-8, fs utf-8, pref UTF-8, out utf-8, error utf-8, screen utf-8\n[debug] yt-dlp version nightly@2026.06.09.230517 from yt-dlp/yt-dlp-nightly-builds [821bef0f0] (zip)\n[debug] Compatibility options: allow-unsafe-ext\n[debug] Python 3.14.5 (CPython x86_64 64bit) - Linux-7.0.12"
+  },
+  {
+   "sha": "b23046bbc8e53f32a3853dc33138f2986f3aed06",
+   "subject": "[ie/youtube:tab] Fix pagination (#16948)",
+   "issues": [
+    "16692",
+    "16943"
+   ],
+   "issue": "16692",
+   "title": "[youtube] yt-dlp occasionally only fetches the first 100 vids of a playlist",
+   "desc": "when passing a playlist to yt-dlp, it may only fetch the first100 vids instead of the whole playlist (dependent on cookies)."
+  },
+  {
+   "sha": "ad6b5f4b3552472c17b3955a3f1525296bed6137",
+   "subject": "[ie/youtube:tab] Fix flat playlist metadata extraction (#16965)",
+   "issues": [
+    "13879",
+    "16665",
+    "16952"
+   ],
+   "issue": "13879",
+   "title": "Cannot get videos' channel or views with --flat-playlist when getting recommended videos on home page on youtube.com",
+   "desc": ""
+  },
+  {
+   "sha": "01f4f06fdd1e1e088981fa4af3422806aefa0c2a",
+   "subject": "[ie/mxplayer] Fix extractors (#16988)",
+   "issues": [
+    "16987"
+   ],
+   "issue": "16987",
+   "title": "MX Player broken",
+   "desc": "Unable to download JSON metadata: HTTP Error 502: Bad Gateway (caused by <HTTPError 502: Bad Gateway>)"
+  },
+  {
+   "sha": "24aecad5df6090ef9c2a9deff27a7182c5164f07",
+   "subject": "[ie/telewebion] Fix extractor (#16986)",
+   "issues": [
+    "16826"
+   ],
+   "issue": "16826",
+   "title": "[telewebion] Broken",
+   "desc": "telewebion.com no longer exists. Probably the regex should be updated."
+  },
+  {
+   "sha": "c4f94545c9d3ce356f2f3149c8fde2134073cee2",
+   "subject": "[ie/niconico] Fix error detection (#16991)",
+   "issues": [
+    "16844"
+   ],
+   "issue": "16844",
+   "title": "[niconico] KeyError('data') on device-restricted videos",
+   "desc": "The niconico extractor fails with KeyError('data') when attempting to download\ndevice-restricted videos (videos that require login due to device limitations).\n\nNon-restricted videos may work fine. The issue is specific to videos that are\nflagged as sensitive/device-restricted content requiring authentication.\n\nI verified that the video is accessible in a browser while logged in with cookies,\nand the correct API response (via ?responseType=json) does contain a \"data\" key\nwith full video/media information including domand video streams.\nHowever, yt-dlp's extractor fails to parse the response correctly.\n\nThe working API response contains:\n- data.response.media.domand with video/audio stream info\n- data.response.video with video metadata"
+  },
+  {
+   "sha": "9ae7df9a22b29e2f81825230c9bba7d444190de0",
+   "subject": "[ie/tviplayer] Fix extractor (#16527)",
+   "issues": [
+    "13132"
+   ],
+   "issue": "13132",
+   "title": "TVIPlayer, Cant extract json data",
+   "desc": "this site changed since may 2025 and after this, dont work anymore."
+  },
+  {
+   "sha": "a75ba96fa48522738b91a907773a6fa9efe6e2d4",
+   "subject": "[ie/youtube:tab] Fix flat extraction of collaborators (#17045)",
+   "issues": [
+    "17044"
+   ],
+   "issue": "17044",
+   "title": "The uploader metadata for videos in playlists with multiple uploaders on a YouTube channel is missing",
+   "desc": "The issue I describe here is the same as the one I reported here - https://github.com/yt-dlp/yt-dlp/issues/16952 - however, I've found that the fix only works for videos with a single uploader and the issue remains for videos with multiple uploaders (a fairly new YouTube feature). I mentioned this in a reply to the previous bug report, but I did not receive a response, so I deleted it and created this thread. In the Verbose Output, I've provided an example playlist that demonstrates this issue.\n\nydl_opts = {\n    'quiet': True,\n    'verbose': True,\n    'extract_flat': 'True',\n    'skip_download': True,\n    'ignoreerrors': True,\n}"
+  },
+  {
+   "sha": "c84b2c6736ac5fac6c3eb9a0cbbeee4d6ed84fdd",
+   "subject": "[ie/svt] Fix extractor (#16288)",
+   "issues": [
+    "16255"
+   ],
+   "issue": "16255",
+   "title": "[svt:play] ERROR: Unable to extract video data (SVTPlay)",
+   "desc": "I am trying to download the movie Bron över floden Kwai, which is playing on TV right now too.\nSo I am using yt-dlp on Ubuntu Server (yt-dlp updated today using yt-dlp -U) and it reports:\ncmd = yt-dlp -F https://www.svtplay.se/video/8qbz1Ax/bron-over-floden-kwai\n[svt:play] Extracting URL: https://www.svtplay.se/video/8qbz1Ax/bron-over-floden-kwai\n[svt:play] 8qbz1Ax: Downloading webpage\nERROR: [svt:play] 8qbz1Ax: Unable to extract video data; please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U\n\nTried several times - no success\nI *Have* previously successfully downloaded videos from SVTPlay successfully (for example Agent 007 movies."
+  },
+  {
+   "sha": "16bdcc525e6a550781d65d6fed92a37800ad95e1",
+   "subject": "[ie/arte] Fix playlist support (#13191)",
+   "issues": [
+    "2945"
+   ],
+   "issue": "2945",
+   "title": "arte.tv playlist does not collect videos",
+   "desc": "### Checklist\n\n- [X] I'm reporting a broken site\n- [X] I've verified that I'm running yt-dlp version **2022.02.04**. ([update instructions](https://github.com/yt-dlp/yt-dlp#update))\n- [X] I've checked that all provided URLs are alive and playable in a browser\n- [X] I've checked that all URLs and arguments with special characters are [properly quoted or escaped](https://github.com/ytdl-org/youtube-dl#video-url-contains-an-ampersand-and-im-getting-some-strange-output-1-2839-or-v-is-not-recognized-as-an-internal-or-external-command)\n- [X] I've searched the [bugtracker](https://github.com/yt-dlp/yt-dlp/issues?q=) for similar issues including closed ones. DO NOT post duplicates\n- [X] I've read the [guidelines for opening an issue](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#ope"
+  },
+  {
+   "sha": "498e51f5da47539f3b4cc52ff85be5f33e7e9d2f",
+   "subject": "[ie/wrestleuniverse:vod] Fix extractor  (#16685)",
+   "issues": [
+    "13818"
+   ],
+   "issue": "13818",
+   "title": "[WrestleUniverse VOD] no longer working as of 07.22.2025",
+   "desc": "Recently WrestleUniverse seems to have added Irvine to VOD uploads but livestreams are unchanged, at least for now. Unable to download and get an error that YTDLP is unable to work with Irvine URL scheme"
+  },
+  {
+   "sha": "e8de28e23c1ecb4a12b2c3dec188c07e998c412c",
+   "subject": "[ie/bilibili] Fix API extraction (#13730)",
+   "issues": [
+    "12887",
+    "16962"
+   ],
+   "issue": "12887",
+   "title": "[BiliBili] No video formats found",
+   "desc": "up and down???   for yt-dlp --dump-json,    ERROR: [BiliBili] BV1zZdWY2Efx: No video formats found!   I don't know ?\n\nYou can test this url, `https://www.bilibili.com/video/BV1zZdWY2Efx/?spm_id_from=333.1007.tianma.1-1-1.click&vd_source=b0a1bf34160f19653acf676ef4f921c8`\n\n\n\n## yd-dlp version\n\nyt-dlp --version\n2025.03.31"
+  },
+  {
+   "sha": "93ceb95cdf0eb05d8a2515e3760fd62239683b82",
+   "subject": "[ie/youtube] Fix live adaptive fragments generation (#17262)",
+   "issues": [
+    "17208"
+   ],
+   "issue": "17208",
+   "title": "\"ERROR: The downloaded file is empty\" for (some?) YT recently completed m4a dash streams",
+   "desc": "To repro you have to find an m4a dash stream on YT Live Recent (or wherever). Here one that currently repros: LOJHJ48TE8s.\n\nA few things from the log that stand out:"
+  },
+  {
+   "sha": "1f1101d0dc8a0ee316540fc938edbaca43e4977b",
+   "subject": "[ie/instagram] Fix logged-in extraction (#17278)",
+   "issues": [
+    "17275"
+   ],
+   "issue": "17275",
+   "title": "[Instagram] Video info extraction failed: HTTP Error 404: Not Found (with cookies)",
+   "desc": "It looks like Instagram is rolling out their GraphQL API.\nYesterday this command worked for me: `yt-dlp --cookies-from-browser chrome -j \"https://www.instagram.com/p/Da0nIK8pENz/\"` but today it returns:\n\n> ERROR: [Instagram] Da0nIK8pENz: Video info extraction failed: HTTP Error 404: Not Found (caused by <HTTPError 404: Not Found>)\n\nIt looks like `yt-dlp` uses `media/<id>/info` Instagram API which might have been decommissioned, as now I see only `POST /api/graphql` GraphQL API requests in my network tab.\n\nI forgot to mention that I am logged in my Chrome."
+  },
+  {
+   "sha": "3f78dc4797e1d3f53caad63778d180e28d1345d6",
+   "subject": "[test:socks] Fix compatibility with `websockets>=17` (#17433)",
+   "issues": [
+    "17383"
+   ],
+   "issue": "17383",
+   "title": "Build failure with websockets 17.0.1",
+   "desc": "Yt-dlp fails to build with websockets 17.0.1"
+  },
+  {
+   "sha": "b375e1d85c8f32c1499bb6ea25f0f200fca25c33",
+   "subject": "[ie/tiktok] Fix extractor (#17452)",
+   "issues": [
+    "17403",
+    "17437"
+   ],
+   "issue": "17403",
+   "title": "[TikTok] Unexpected response from webpage request",
+   "desc": "When I try to download \nhttps://www.tiktokv.com/share/video/7668090902816017671/\nyt-dlp shows the error. My instance of yt-dlp worked for tiktok videos back on July 12th, I have not tried since (though I did update to the latest nightly)."
+  },
+  {
+   "sha": "06ab8f6a907d9495c9a90605e5a03acc8e21f976",
+   "subject": "[ie/tiktok] Fix formats extraction (#17460)",
+   "issues": [
+    "16622",
+    "17293",
+    "17372"
+   ],
+   "issue": "16622",
+   "title": "[Tiktok] Videos intermittently downloading without sound",
+   "desc": "Tiktok videos are intermittently failing to download audio. I am using deno and the most up to date versions of everything. Choosing a different country via VPN does not effect the issue. I am including three output logs. One where the audio failed to download, one where the audio downloaded and one where I attempted to download only audio and the output requested I post the log here. So here you go. I'm not a programmer so please let me know if I've missed something."
+  },
+  {
+   "sha": "537ed68684587fc9aa191275154f0c350f5a452a",
+   "subject": "[ie/BFMTV] Fix extractor (#16905)",
+   "issues": [
+    "16864"
+   ],
+   "issue": "16864",
+   "title": "bfmtv: Failed to extract video",
+   "desc": "Since two days, the extraction fail"
+  },
+  {
+   "sha": "d3ea2cf84a02dfff9cf92bf7ecc31ce936e64621",
+   "subject": "[ie/whyp] Fix extractor (#17467)",
+   "issues": [
+    "17466"
+   ],
+   "issue": "17466",
+   "title": "Whyp.it changed their urls",
+   "desc": "I believe whyp.it has changed the way their URLs work, or are formatted. (Sorry first time reporting an issue).\n\nUsing current Whyp.it URLs, I get the unsupported URL error. After looking into it, I found that old links to Whyp.it have numbers or identifiers immediately after /track, then its followed by /filename. Clciking on old links sends you to the right page with a changed link where /track is followed by the file name then -identifier.\n\nUsing old links, yt-dlp recognizes the link but fails to work\n\nHere's an example of the old link and new link to the same video\n\nNew:\nhttps://whyp.it/tracks/example-track-HPuZgly3yViP\nOld: \nhttps://whyp.it/tracks/18337/example-track\n\n\nI've attatched images of both non-verbose outputs\n\nNew:\n\n<img width=\"1960\" height=\"338\" alt=\"Image\" src=\"https://gith"
+  },
+  {
+   "sha": "91f784d6fd911c0b8fc91645a9ba61ded0a8abb4",
+   "subject": "[test] Fix handshake error matching for OpenSSL 4.x (#17491)",
+   "issues": [
+    "17490"
+   ],
+   "issue": "17490",
+   "title": "Tests fail with newer OpenSSL",
+   "desc": "Tests are failing in Fedora Rawhide:\n\n~~~\n============================= test session starts ==============================\nplatform linux -- Python 3.15.0rc1, pytest-9.1.1, pluggy-1.6.0\nrootdir: /builddir/build/BUILD/yt-dlp-2026.08.19-build/yt-dlp-2026.08.19\nconfigfile: pyproject.toml\ncollected 7114 items / 5840 deselected / 1274 selected\n~~~"
+  },
+  {
+   "sha": "9fb5969797e79d5138605ae6c2ae59e2a6e3be55",
+   "subject": "[ie/ted] Fix extractor (#17510)",
+   "issues": [
+    "17507"
+   ],
+   "issue": "17507",
+   "title": "[TedTalk] ERROR: the JSON object must be str, bytes or bytearray, not NoneType",
+   "desc": "I tried to download a video from tedtalks but cannot extract the url, it fails and log `ERROR: the JSON object must be str, bytes or bytearray, not NoneType`.\n\nI tested with multiple videos (slug and id) and trying to just extract formats or simulate download but the result is the same.\n\nI tested with MacOS binaries (stable/nightly) and in a ubuntu vm with pip, the results are the same so I guess is related to a change in the site (ted.com)"
+  },
+  {
+   "sha": "a2a8846b0d3ee87f5c31fc8615c790a84874dde7",
+   "subject": "[ie/showroom] Fix extractor (#17488)",
+   "issues": [
+    "17331"
+   ],
+   "issue": "17331",
+   "title": "Showroom errors with \"Unable to extract Nuxt JSON data\"",
+   "desc": "After the commit which fixed #7297, trying to download showroom links result in it erroring out with  \"Unable to extract Nuxt JSON data\" instead."
+  },
+  {
+   "sha": "2089f8ad37de3a197c14afa4fb2bf066324409fd",
+   "subject": "[ie/tubitv:series] Fix extractor (#17545)",
+   "issues": [
+    "17543"
+   ],
+   "issue": "17543",
+   "title": "Not downloading a full season on tubi",
+   "desc": "Can't download a full season from tubi using the season url"
+  },
+  {
+   "sha": "1d1351f40f0cbccd113e5b1ad1a37621008361ff",
+   "subject": "[ie/bandcamp] Fix extractors (#17546)",
+   "issues": [
+    "17506"
+   ],
+   "issue": "17506",
+   "title": "[Bandcamp:album] Unable to extract tralbum data",
+   "desc": "There is #17356 but that's been closed as solved. There is also #13729 but that has a different error."
+  },
+  {
+   "sha": "94eba4c156af080e87caf10cf8ffbea03bd17407",
+   "subject": "[ie/globalplayer] Fix extractors (#17442)",
+   "issues": [
+    "17215",
+    "17429"
+   ],
+   "issue": "17215",
+   "title": "[GlobalPlayerAudioEpisode] Missing \"id\" field in extractor result / Global Player",
+   "desc": "yt-dlp  https://www.globalplayer.com/catchup/radiox/uk/episodes/2zGmFpv4SuabzjZV6kwFBM4o52/\n[GlobalPlayerAudioEpisode] Extracting URL: https://www.globalplayer.com/catchup/radiox/uk/episodes/2zGmFpv4SuabzjZV6kwFBM4o52/\n[GlobalPlayerAudioEpisode] 2zGmFpv4SuabzjZV6kwFBM4o52: Downloading webpage\nERROR: [GlobalPlayerAudioEpisode] Missing \"id\" field in extractor result"
+  },
+  {
+   "sha": "28d35b7762ee4fb8c1214b2d26e7a28630d03992",
+   "subject": "[ie/twitch:clips] Fix extractor (#17554)",
+   "issues": [
+    "17553"
+   ],
+   "issue": "17553",
+   "title": "[twitch:clips] An extractor error has occurred. (caused by KeyError('data')) version 2026.08.19",
+   "desc": "im having some problems with yt-dlp downloading twitch clips, i have no idea what's happening.\n\ni know this is a duplicate, but I checked the other issue pages about this error and i couldn't understand the fix, if it really was one.\n\n\"ERROR: CloudyShakingQuailBIRB-a5OlDJFfl92NZMR7: An extractor error has occurred. (caused by KeyError('data')); please report this issue on https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using yt-dlp -U\""
+  },
+  {
+   "sha": "51bab8a0116f4d8004c315706d809782607d5847",
+   "subject": "[ie/odnoklassniki] Fix extractor (#17739)",
+   "issues": [
+    "17585",
+    "17600"
+   ],
+   "issue": "17585",
+   "title": "ok.ru not downloading any video",
+   "desc": "Odnoklassniki (https://ok.ru/) has recently stopped working.\nany video i can try throws \"ERROR: the JSON object must be str, bytes or bytearray, not dict\"\n\nbelow is the output example for a video but I can't find one that works so I assume all videos are affected."
+  }
+ ]
+}

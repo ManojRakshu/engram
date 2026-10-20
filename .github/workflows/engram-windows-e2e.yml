@@ -12,7 +12,7 @@ on:
         required: true
   push:
     branches: [windows]
-    paths: [src/**, plugin/**, install.ps1, scripts/windows/e2e-mcp.mjs, scripts/windows/demo-repo.ps1, scripts/windows/mock-anthropic.mjs, scripts/windows/fake-agent/**, .github/workflows/engram-windows-e2e.yml]
+    paths: [src/**, plugin/**, install.ps1, scripts/e2e/**, .github/workflows/engram-windows-e2e.yml]
 
 concurrency:
   group: engram-windows-e2e-${{ inputs.falkordb_run || 'push' }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Demo repo
         if: steps.fdb.outputs.ready == 'true'
-        run: ./scripts/windows/demo-repo.ps1 $env:DEMO
+        run: ./scripts/e2e/demo-repo.ps1 $env:DEMO
 
       - name: Install (no Node on PATH, no Docker, no WSL)
         if: steps.fdb.outputs.ready == 'true'
@@ -86,14 +86,14 @@ jobs:
         if: steps.fdb.outputs.ready == 'true'
         run: |
           $node = "$HOME\.engram\node-v22.23.1\node.exe"
-          & $node scripts/windows/e2e-mcp.mjs cursor "$HOME\.cursor\mcp.json" $env:DEMO; if ($LASTEXITCODE) { throw "cursor" }
-          & $node scripts/windows/e2e-mcp.mjs codex "$HOME\.codex\config.toml" $env:DEMO; if ($LASTEXITCODE) { throw "codex" }
-          & $node scripts/windows/e2e-mcp.mjs gemini "$HOME\.gemini\settings.json" $env:DEMO; if ($LASTEXITCODE) { throw "gemini" }
+          & $node scripts/e2e/mcp-check.mjs cursor "$HOME\.cursor\mcp.json" $env:DEMO; if ($LASTEXITCODE) { throw "cursor" }
+          & $node scripts/e2e/mcp-check.mjs codex "$HOME\.codex\config.toml" $env:DEMO; if ($LASTEXITCODE) { throw "codex" }
+          & $node scripts/e2e/mcp-check.mjs gemini "$HOME\.gemini\settings.json" $env:DEMO; if ($LASTEXITCODE) { throw "gemini" }
 
       - name: engram run with an npm-installed CLI agent (.cmd shim)
         if: steps.fdb.outputs.ready == 'true'
         run: |
-          npm install -g ./scripts/windows/fake-agent
+          npm install -g ./scripts/e2e/fake-agent
           $env:FAKE_AGENT_OUT = "$env:RUNNER_TEMP\fake-agent-prompt.txt"
           Push-Location $env:DEMO
           & "$HOME\.engram\bin\engram.cmd" run "the discount is applied twice on the invoice total" -- fake-agent "{prompt}"
@@ -116,7 +116,7 @@ jobs:
           claude plugin list
           $env:ENGRAM_HOOK_LOG = "$env:RUNNER_TEMP\hooks.jsonl"
           $node = "$HOME\.engram\node-v22.23.1\node.exe"
-          Start-Process -NoNewWindow $node -ArgumentList "$env:GITHUB_WORKSPACE\scripts\windows\mock-anthropic.mjs", "`"$env:DEMO\billing\discount.py`"", "`"return base * (1 - pct)`"", "`"return base * (1 - clamp(pct))`"" -RedirectStandardOutput "$env:RUNNER_TEMP\mock.log"
+          Start-Process -NoNewWindow $node -ArgumentList "$env:GITHUB_WORKSPACE\scripts\e2e\mock-anthropic.mjs", "`"$env:DEMO\billing\discount.py`"", "`"return base * (1 - pct)`"", "`"return base * (1 - clamp(pct))`"" -RedirectStandardOutput "$env:RUNNER_TEMP\mock.log"
           Start-Sleep 2
           claude -p "the discount is applied twice on the invoice total" --dangerously-skip-permissions --output-format json
           Pop-Location

@@ -10,7 +10,9 @@ import { parseTreeSitter } from "../src/indexer/parse.ts";
 import { buildPack } from "../src/pack.ts";
 
 const [root, repo, issuesPath, label = repo] = process.argv.slice(2);
-const issues: { sha: string; subject: string; issue: string; title: string; desc: string }[] = JSON.parse(readFileSync(issuesPath, "utf8"));
+// A bare array, or { issues: [...] } as in bench/data/yt-dlp-issues.json.
+const raw = JSON.parse(readFileSync(issuesPath, "utf8"));
+const issues: { sha: string; subject: string; issue: string; title: string; desc: string }[] = Array.isArray(raw) ? raw : raw.issues;
 const git = (...a: string[]) => execFileSync("git", ["-C", root, ...a], { maxBuffer: 64 << 20 }).toString();
 const g = await RepoGraph.open(repo);
 
