@@ -199,8 +199,7 @@ jobs:
           if (-not ($r2 -match '^1$')) { throw "graph not restored from RDB" }
           & $cli -p 6390 SHUTDOWN NOSAVE
 
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - uses: actions/upload-artifact@v4 # only after the smoke test passed
         with:
           name: falkordb-windows-x64
           path: |
