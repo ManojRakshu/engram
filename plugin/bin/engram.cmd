@@ -10,6 +10,7 @@ if not defined NODE if exist "%EH%\node-v22.23.1\node.exe" set "NODE=%EH%\node-v
 if not defined NODE for /f "delims=" %%i in ('where node 2^>nul') do if not defined NODE set "NODE=%%i"
 if defined NODE ( "%NODE%" -e "process.exit(+process.versions.node.split('.')[0]<22?1:0)" >nul 2>&1 || set "NODE=" )
 if not defined NODE (
+  set "PSModulePath="
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fetch-node.ps1" "%EH%" || exit /b 1
   set "NODE=%EH%\node-v22.23.1\node.exe"
 )

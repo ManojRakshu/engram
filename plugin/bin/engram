@@ -14,7 +14,7 @@ NODE="${ENGRAM_NODE:-}"
 [ -z "$NODE" ] && [ -n "$WIN" ] && [ -f "$EH/node-$NODE_VER/node.exe" ] && NODE="$EH/node-$NODE_VER/node.exe"
 [ -z "$NODE" ] && NODE="$(command -v node)"
 if [ -z "$NODE" ] && [ -n "$WIN" ]; then
-  mkdir -p "$EH" && powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$DIR/bin/fetch-node.ps1" "$(cd "$EH" && pwd -W)" >&2 || exit 1
+  mkdir -p "$EH" && PSModulePath= powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$DIR/bin/fetch-node.ps1" "$(cd "$EH" && pwd -W)" >&2 || exit 1
   NODE="$EH/node-$NODE_VER/node.exe"
 fi
 if [ -z "$NODE" ]; then

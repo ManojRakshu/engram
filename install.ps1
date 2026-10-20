@@ -35,3 +35,4 @@ if (-not (($UserPath -split ";") -contains $Bin)) {
 $env:Path = "$Bin;$env:Path"
 
 & (Join-Path $Dest "plugin\bin\engram.cmd") setup @args
+if ($LASTEXITCODE) { throw "engram setup failed (exit $LASTEXITCODE)" }

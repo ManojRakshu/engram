@@ -65,10 +65,9 @@ jobs:
           Push-Location $env:DEMO
           New-Item -ItemType Directory -Force "$HOME\.cursor", "$HOME\.codex", "$HOME\.gemini" | Out-Null
           & ([scriptblock]::Create((Get-Content -Raw "$env:GITHUB_WORKSPACE\install.ps1")))
-          if ($LASTEXITCODE) { throw "install failed" }
           Pop-Location
           Get-ChildItem "$HOME\.engram"
-          Get-Content "$HOME\.engram\falkordb.log" -Tail 5
+          Get-Content "$HOME\.engram\falkordb.log" -Tail 5 -ErrorAction SilentlyContinue
 
       - name: CLI (fresh shell, engram from the user PATH)
         if: steps.fdb.outputs.ready == 'true'
