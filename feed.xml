@@ -5,8 +5,15 @@
   <link href="https://manojrakshu.github.io/engram/feed.xml" rel="self"/>
   <link href="https://manojrakshu.github.io/engram/"/>
   <id>https://manojrakshu.github.io/engram/</id>
-  <updated>2026-10-19T00:00:00Z</updated>
+  <updated>2026-10-20T00:00:00Z</updated>
   <author><name>Manoj Shetty</name><uri>https://github.com/ManojRakshu</uri></author>
+  <entry>
+    <title>Native Windows</title>
+    <link href="https://github.com/ManojRakshu/engram#install-in-one-command"/>
+    <id>https://manojrakshu.github.io/engram/#windows</id>
+    <updated>2026-10-20T00:00:00Z</updated>
+    <summary>Engram now runs natively on Windows x64 (no WSL, no Docker) on my own Windows build of FalkorDB 4.18.3. CI checks that the maps, rankings and yt-dlp scores are identical on Linux, macOS and Windows; maps are slower on Windows today.</summary>
+  </entry>
   <entry>
     <title>Engram 0.1.0</title>
     <link href="https://github.com/ManojRakshu/engram"/>

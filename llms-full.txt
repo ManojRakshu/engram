@@ -10,7 +10,10 @@ Engram turns a repository into one FalkorDB graph: the code, its git history, an
 No LLM calls of its own. Every answer is a Cypher query.
 `curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh`
 
-Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing. On Windows, run it inside WSL2 (Ubuntu 24.04+); there is no native Windows build yet.
+Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.
+`irm https://raw.githubusercontent.com/ManojRakshu/engram/main/install.ps1 | iex`
+
+In PowerShell, inside a repo. Native: no WSL, no Docker, no Node.js needed. FalkorDB runs from my Windows build of FalkorDB 4.18.3, pinned by sha256.
 `{ "mcpServers": { "engram": { "command": "~/.engram/app/plugin/bin/engram", "args": ["mcp"] } } }`
 
 Use the absolute path. The installer already wires Claude Code, Cursor, Codex, Gemini CLI, Windsurf, opencode, VS Code, Cline and Kiro.
@@ -135,7 +138,7 @@ Per-task geometric mean vs Claude Code: Engram −22%, fewer tokens on 11 of 12 
 ### A messy real project: yt-dlp's own bug reports
 
 yt-dlp: 1,128 Python files, 248k lines, years of community patches. I indexed it as of 30 April 2026 (4.0 s) and took every later fix that closes a GitHub issue. Engram gets only the issue the user wrote and is scored against the functions the maintainers actually changed.
-- 30 real issues, zero LLM tokens: right file in the top 3 for 22/30; the fixed function in the top 10 for 20/30 and on the map for 16/30. Median 240 ms.
+- 30 real issues, zero LLM tokens: right file in the top 3 for 22/30; the fixed function in the top 10 for 20/30 and on the map for 17/30. Median 240 ms.
 - Live Claude Code on 4 of them (one run each, fix not in git): both setups found the right file and function 4/4; with Engram −31% tokens, −33% tool calls, −24% time.
 
 bench/realworld.ts ↗ (https://github.com/ManojRakshu/engram/blob/main/bench/realworld.ts) · realworld.json ↗ (https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld.json) · realworld-live.json ↗ (https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld-live.json)
@@ -195,7 +198,7 @@ Scope differs: codebase-memory-mcp also indexes docs and config; Engram indexes 
 
 ### Where Engram is behind
 - Fewer agents wired automatically: 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.
-- Platforms: embedded FalkorDB covers Apple-silicon macOS and Linux x64/arm64 with glibc 2.39+ (including WSL2). Intel Macs and older Linux fall back to Docker or `--url`. No native Windows.
+- Platforms: embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or `--url`. Windows gives identical results but is slower today: a map takes 0.5–2 s, against 0.05–0.6 s on Linux and macOS.
 - Languages: Python, TypeScript and JavaScript.
 - Peak indexing RAM is slightly higher (242 MB vs 221 MB).
 

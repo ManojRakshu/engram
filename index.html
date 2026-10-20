@@ -65,7 +65,7 @@
       "about": {"@id": "https://manojrakshu.github.io/engram/#software"},
       "primaryImageOfPage": "https://manojrakshu.github.io/engram/og.png",
       "datePublished": "2026-10-19",
-      "dateModified": "2026-10-19",
+      "dateModified": "2026-10-20",
       "author": {"@id": "https://manojrakshu.github.io/engram/#person"}
     },
     {
@@ -73,7 +73,7 @@
       "@id": "https://manojrakshu.github.io/engram/#app",
       "name": "Engram",
       "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "macOS (Apple silicon), Linux (x64, arm64)",
+      "operatingSystem": "macOS (Apple silicon), Linux (x64, arm64), Windows (x64)",
       "softwareVersion": "0.1.0",
       "downloadUrl": "https://github.com/ManojRakshu/engram",
       "installUrl": "https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh",
@@ -363,13 +363,18 @@ footer p{margin:6px 0}
 
 <div class="install" id="get">
   <div class="tabs" role="tablist" aria-label="Install options">
-    <button role="tab" aria-selected="true" aria-controls="p-sh" id="t-sh">macOS · Linux · WSL2</button>
+    <button role="tab" aria-selected="true" aria-controls="p-sh" id="t-sh">macOS · Linux</button>
+    <button role="tab" aria-selected="false" aria-controls="p-win" id="t-win">Windows</button>
     <button role="tab" aria-selected="false" aria-controls="p-mcp" id="t-mcp">Any MCP client</button>
     <button role="tab" aria-selected="false" aria-controls="p-team" id="t-team">Shared FalkorDB</button>
   </div>
   <div class="panel" id="p-sh" role="tabpanel" aria-labelledby="t-sh">
     <div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh</code><button type="button" data-copy>COPY</button></div>
-    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing. On Windows, run it inside WSL2 (Ubuntu 24.04+); there is no native Windows build yet.</p>
+    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.</p>
+  </div>
+  <div class="panel" id="p-win" role="tabpanel" aria-labelledby="t-win" hidden>
+    <div class="cmd"><code>irm https://raw.githubusercontent.com/ManojRakshu/engram/main/install.ps1 | iex</code><button type="button" data-copy>COPY</button></div>
+    <p class="note">In PowerShell, inside a repo. Native: no WSL, no Docker, no Node.js needed. FalkorDB runs from my Windows build of FalkorDB 4.18.3, pinned by sha256.</p>
   </div>
   <div class="panel" id="p-mcp" role="tabpanel" aria-labelledby="t-mcp" hidden>
     <div class="cmd"><code class="json">{ "mcpServers": { "engram": { "command": "~/.engram/app/plugin/bin/engram", "args": ["mcp"] } } }</code><button type="button" data-copy>COPY</button></div>
@@ -548,7 +553,7 @@ RETURN l.owner = $me AS got</pre>
     <div class="prose">
       <p>yt-dlp: 1,128 Python files, 248k lines, years of community patches. I indexed it as of 30 April 2026 (4.0 s) and took every later fix that closes a GitHub issue. Engram gets only the issue the user wrote and is scored against the functions the maintainers actually changed.</p>
       <ul class="tight">
-        <li><b>30 real issues, zero LLM tokens:</b> right file in the top 3 for <b>22/30</b>; the fixed function in the top 10 for 20/30 and on the map for 16/30. Median 240 ms.</li>
+        <li><b>30 real issues, zero LLM tokens:</b> right file in the top 3 for <b>22/30</b>; the fixed function in the top 10 for 20/30 and on the map for 17/30. Median 240 ms.</li>
         <li><b>Live Claude Code on 4 of them</b> (one run each, fix not in git): both setups found the right file and function 4/4; with Engram <b>−31% tokens, −33% tool calls, −24% time</b>.</li>
       </ul>
       <p class="src-line"><a href="https://github.com/ManojRakshu/engram/blob/main/bench/realworld.ts">bench/realworld.ts ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld.json">realworld.json ↗</a> · <a href="https://github.com/ManojRakshu/engram/blob/main/bench/results/realworld-live.json">realworld-live.json ↗</a></p>
@@ -627,7 +632,7 @@ RETURN l.owner = $me AS got</pre>
     <h3>Where Engram is behind</h3>
     <ul class="tight">
       <li><b>Fewer agents wired automatically:</b> 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.</li>
-      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS and Linux x64/arm64 with glibc 2.39+ (including WSL2). Intel Macs and older Linux fall back to Docker or <code>--url</code>. No native Windows.</li>
+      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or <code>--url</code>. Windows gives identical results but is slower today: a map takes 0.5–2 s, against 0.05–0.6 s on Linux and macOS.</li>
       <li><b>Languages:</b> Python, TypeScript and JavaScript.</li>
       <li><b>Peak indexing RAM</b> is slightly higher (242 MB vs 221 MB).</li>
     </ul>
