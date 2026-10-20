@@ -3,9 +3,9 @@
     "n": 30,
     "skipped": 3,
     "top10": 20,
-    "shownInMap": 16,
+    "shownInMap": 17,
     "fileTop3": 22,
-    "medianMs": 238,
+    "medianMs": 237,
     "rows": [
       {
         "issue": "16876",
@@ -32,7 +32,7 @@
         "shown": 0,
         "fileRank": 5,
         "confidence": "medium",
-        "ms": 251
+        "ms": 243
       },
       {
         "issue": "16359",
@@ -44,7 +44,7 @@
         "shown": 2,
         "fileRank": 2,
         "confidence": "medium",
-        "ms": 168
+        "ms": 165
       },
       {
         "issue": "16674",
@@ -58,7 +58,7 @@
         "shown": 2,
         "fileRank": 2,
         "confidence": "medium",
-        "ms": 116
+        "ms": 115
       },
       {
         "issue": "13672",
@@ -74,11 +74,11 @@
           "yt_dlp/extractor/iwara.py#IwaraPlaylistIE._entries",
           "yt_dlp/extractor/iwara.py#IwaraPlaylistIE._real_extract"
         ],
-        "rank": 3,
-        "shown": 3,
+        "rank": 6,
+        "shown": 6,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 76
+        "ms": 77
       },
       {
         "issue": "16924",
@@ -91,7 +91,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 80
+        "ms": 85
       },
       {
         "issue": "16919",
@@ -105,7 +105,7 @@
         "shown": 0,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 242
+        "ms": 240
       },
       {
         "issue": "16692",
@@ -118,7 +118,7 @@
         "shown": 0,
         "fileRank": 8,
         "confidence": "medium",
-        "ms": 135
+        "ms": 134
       },
       {
         "issue": "13879",
@@ -131,7 +131,7 @@
         "shown": 5,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 137
+        "ms": 139
       },
       {
         "issue": "16987",
@@ -145,7 +145,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 131
+        "ms": 185
       },
       {
         "issue": "16826",
@@ -159,7 +159,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 97
+        "ms": 98
       },
       {
         "issue": "16844",
@@ -171,7 +171,7 @@
         "shown": 0,
         "fileRank": 10,
         "confidence": "high",
-        "ms": 295
+        "ms": 317
       },
       {
         "issue": "13132",
@@ -184,7 +184,7 @@
         "shown": 4,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 169
+        "ms": 172
       },
       {
         "issue": "17044",
@@ -197,7 +197,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 271
+        "ms": 277
       },
       {
         "issue": "16255",
@@ -210,7 +210,7 @@
         "shown": 3,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 245
+        "ms": 251
       },
       {
         "issue": "2945",
@@ -223,7 +223,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 240
+        "ms": 257
       },
       {
         "issue": "13818",
@@ -235,11 +235,11 @@
           "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE",
           "yt_dlp/extractor/wrestleuniverse.py#WrestleUniversePPVIE._real_extract"
         ],
-        "rank": 7,
-        "shown": 0,
+        "rank": 6,
+        "shown": 6,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 215
+        "ms": 237
       },
       {
         "issue": "12887",
@@ -256,7 +256,7 @@
         "shown": 3,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 263
+        "ms": 266
       },
       {
         "issue": "17275",
@@ -268,7 +268,7 @@
         "shown": 0,
         "fileRank": 3,
         "confidence": "medium",
-        "ms": 277
+        "ms": 281
       },
       {
         "issue": "17403",
@@ -316,7 +316,7 @@
         "shown": 1,
         "fileRank": 1,
         "confidence": "medium",
-        "ms": 103
+        "ms": 105
       },
       {
         "issue": "17466",
@@ -329,7 +329,7 @@
         "shown": 2,
         "fileRank": 2,
         "confidence": "medium",
-        "ms": 251
+        "ms": 256
       },
       {
         "issue": "17507",
@@ -342,7 +342,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 255
+        "ms": 254
       },
       {
         "issue": "17331",
@@ -355,7 +355,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 183
+        "ms": 181
       },
       {
         "issue": "17543",
@@ -364,11 +364,11 @@
           "yt_dlp/extractor/tubitv.py#TubiTvShowIE",
           "yt_dlp/extractor/tubitv.py#TubiTvShowIE._entries"
         ],
-        "rank": 4,
-        "shown": 4,
-        "fileRank": 3,
+        "rank": 3,
+        "shown": 3,
+        "fileRank": 2,
         "confidence": "medium",
-        "ms": 81
+        "ms": 80
       },
       {
         "issue": "17506",
@@ -410,7 +410,7 @@
         "shown": 2,
         "fileRank": 2,
         "confidence": "medium",
-        "ms": 264
+        "ms": 256
       },
       {
         "issue": "17553",
@@ -422,7 +422,7 @@
         "shown": 0,
         "fileRank": 2,
         "confidence": "medium",
-        "ms": 304
+        "ms": 298
       },
       {
         "issue": "17585",
@@ -437,7 +437,7 @@
         "shown": 0,
         "fileRank": 0,
         "confidence": "medium",
-        "ms": 238
+        "ms": 233
       }
     ]
   }

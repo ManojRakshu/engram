@@ -4,7 +4,7 @@ name: falkordb-windows
 
 on:
   push:
-    branches: [windows]
+    branches: [main, windows]
     paths: [.github/workflows/falkordb-windows.yml, scripts/windows/patch-falkordb.sh]
   workflow_dispatch:
 

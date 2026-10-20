@@ -30,7 +30,7 @@ const BUILDS: Record<string, { url: string; sha256: string }> = {
   },
   "win32-x64": {
     url: "https://github.com/ManojRakshu/engram/releases/download/falkordb-windows-v4.18.3/falkordb-windows-x64.zip",
-    sha256: "TODO",
+    sha256: "9e5ebd9b06ff3765725432dcabe44f4edee37adff5c9a3b6a29098c556c01cca",
   },
 };
 const WIN = process.platform === "win32";

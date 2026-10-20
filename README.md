@@ -104,7 +104,7 @@ years of community patches. I indexed it as of 30 Apr 2026 (4.0 s) and took ever
 issue. Engram gets only the user's issue (title and description, no logs) and is scored against the functions the
 maintainers actually changed ([`bench/realworld.ts`](bench/realworld.ts)):
 - **Zero LLM tokens, 30 real issues:** the right file is in the top 3 for **22/30**, the fixed function is in the top
-  10 for 20/30 and on the ~200-token map for 16/30. Median 240 ms.
+  10 for 20/30 and on the ~200-token map for 17/30. Median 240 ms.
 - **Live Claude Code, 4 of those issues** (one run each, fresh copies with the fix not in git): both setups named the
   right file and function 4/4; with Engram it took **−31% tokens, −33% tool calls, −24% time**
   ([raw results](bench/results/realworld-live.json)).
@@ -120,6 +120,12 @@ Nothing to install first: no Docker, no database server, no Node.js, no API keys
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh
+```
+
+On Windows, in PowerShell (native, no WSL):
+
+```powershell
+irm https://raw.githubusercontent.com/ManojRakshu/engram/main/install.ps1 | iex
 ```
 
 Run it inside a repo. Real output from a fresh user profile whose PATH had only the system directories (no Node, Docker or Homebrew), with paths shortened:
@@ -144,7 +150,10 @@ This repo
   own embedded build (FalkorDB v4.18.3). The download is pinned and checked against its sha256, about 18 MB on macOS.
   It runs as one small server per user on an owner-only Unix socket in `~/.engram`, using 38–64 MB of RAM with
   click and networkx loaded. Every agent on the machine shares it, so they share one memory and one set of edit claims.
-  It starts on demand (a cold start costs about 50 ms) and saves to disk.
+  It starts on demand (a cold start costs about 50 ms) and saves to disk. FalkorDBLite has no Windows build, so for
+  Windows I build FalkorDB v4.18.3 from source ([how](.github/workflows/falkordb-windows.yml),
+  [release](https://github.com/ManojRakshu/engram/releases/tag/falkordb-windows-v4.18.3)). There it listens on
+  loopback with a random password instead of a socket.
 - **Node.js is optional.** The launcher uses your Node 22+, or fetches the official build once, checksum-verified.
 - **Your agent never waits on it.** If FalkorDB isn't up yet, the agent works as usual and Engram switches on at the next prompt.
 
@@ -159,8 +168,11 @@ workspace roots, so editors that start servers outside the repo still work.
 **A shared or hosted FalkorDB** (a team-wide memory, or FalkorDB Cloud): `engram setup --url falkor://user:pass@host:port`,
 or set `FALKORDB_URL`.
 
-**Platforms.** Embedded FalkorDB covers macOS on Apple silicon and Linux x64/arm64 with glibc 2.39+ (Ubuntu 24.04+,
-and WSL2 on Windows). On other systems, Engram runs FalkorDB in Docker if it's available, or you pass `--url`.
+**Platforms.** Embedded FalkorDB covers macOS on Apple silicon, Linux x64/arm64 with glibc 2.39+ (Ubuntu 24.04+),
+and Windows x64. On other systems, Engram runs FalkorDB in Docker if it's available, or you pass `--url`.
+On every code change, [CI](.github/workflows/cross-os.yml) indexes the same repos on Linux, macOS and Windows and checks that
+the maps, rankings and blast radius agents get are byte-identical, and that the 30 yt-dlp issues score the same.
+Windows is slower today: a map takes 0.5–2 s there against 0.05–0.6 s on Linux and macOS (CI runners).
 
 **Try it from a terminal:**
 ```bash
@@ -173,7 +185,8 @@ engram impact src/some/file.py             # blast radius
 `ENGRAM_MEMORY`, `ENGRAM_CLAIMS` or `ENGRAM_HISTORY` set to `0`.
 
 **Uninstall:** `engram setup --remove` disconnects every agent, and `engram db stop` stops FalkorDB. Delete
-`~/.engram` to remove everything, including the graphs. Engram writes nothing else.
+`~/.engram` to remove everything, including the graphs. Engram writes nothing else, except that on Windows it adds
+`~/.engram\bin` to your user PATH.
 
 ## How it works
 

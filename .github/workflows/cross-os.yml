@@ -4,7 +4,7 @@ name: cross-os
 
 on:
   push:
-    branches: [windows]
+    branches: [main, windows]
     paths: [src/**, plugin/**, bench/**, scripts/e2e/**, install.sh, install.ps1, .github/workflows/cross-os.yml]
 
 concurrency:
@@ -31,8 +31,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Git like a default Windows install (CRLF checkouts)
         if: runner.os == 'Windows'
@@ -42,13 +40,6 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-
-      - name: FalkorDB for Windows (newest build that passed the smoke test)
-        if: runner.os == 'Windows'
-        run: |
-          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=falkordb-windows-x64&per_page=1" -q '.artifacts[0].workflow_run.id')
-          gh run download "$run" -R "$GITHUB_REPOSITORY" -n falkordb-windows-x64 -D "$RUNNER_TEMP/fdb"
-          echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP\\fdb\\falkordb-windows-x64.zip" >> "$GITHUB_ENV"
 
       - name: Benchmark repos at their pinned commits
         run: |
