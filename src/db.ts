@@ -19,14 +19,16 @@ function record(name: string, ms: number) {
 }
 
 export function latencyStats() {
-  const out: Record<string, { n: number; p50: number; p95: number; p99: number }> = {};
+  const out: Record<string, { n: number; p50: number; p95: number; p99: number; total: number }> = {};
   for (const [name, arr] of samples) {
     const s = [...arr].sort((a, b) => a - b);
     const q = (p: number) => s[Math.min(s.length - 1, Math.floor(p * s.length))] ?? 0;
-    out[name] = { n: s.length, p50: round(q(0.5)), p95: round(q(0.95)), p99: round(q(0.99)) };
+    out[name] = { n: s.length, p50: round(q(0.5)), p95: round(q(0.95)), p99: round(q(0.99)), total: round(s.reduce((a, b) => a + b, 0)) };
   }
   return out;
 }
+
+export const resetLatencyStats = () => samples.clear();
 
 const round = (n: number) => Math.round(n * 100) / 100;
 

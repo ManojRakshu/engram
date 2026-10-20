@@ -4,7 +4,7 @@
 //   npx tsx scripts/e2e/snapshot.ts <out-dir> <name>=<repo-dir>=<tasks.json> ...
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { close, RepoGraph } from "../../src/db.ts";
+import { close, latencyStats, RepoGraph, resetLatencyStats } from "../../src/db.ts";
 import { ingestGit } from "../../src/git.ts";
 import { indexRepo } from "../../src/indexer/index.ts";
 import { impact, renderImpact } from "../../src/memory.ts";
@@ -26,6 +26,7 @@ for (const spec of suites) {
   snapshot[`${name}/index`] = { files: code.files, symbols: code.symbols, calls: code.calls, imports: code.imports, commits: git.commits, coChangePairs: git.coChangePairs };
 
   const packMs: number[] = [];
+  resetLatencyStats();
   for (const t of JSON.parse(readFileSync(tasksFile, "utf8")).tasks as { id: string; file: string; symptom: string }[]) {
     const p = await buildPack(g, dir, t.symptom, { budget: 2500 });
     packMs.push(p.ms);
@@ -36,7 +37,10 @@ for (const spec of suites) {
     snapshot[`${name}/${t.id}/impact`] = renderImpact(await impact(g, t.file));
   }
   packMs.sort((a, b) => a - b);
-  timings[name] = { indexMs, files: code.files, packMedianMs: packMs[Math.floor(packMs.length / 2)], packMaxMs: packMs.at(-1) };
+  // Where the time goes: every query the maps and blast radius ran, by name (the rest is Node).
+  const queries = Object.fromEntries(Object.entries(latencyStats()).map(([q, s]) => [q, { n: s.n, p50: s.p50, total: s.total }]));
+  const packTotalMs = Math.round(packMs.reduce((a, b) => a + b, 0));
+  timings[name] = { indexMs, files: code.files, packMedianMs: packMs[Math.floor(packMs.length / 2)], packMaxMs: packMs.at(-1), packTotalMs, queries };
 }
 
 writeFileSync(path.join(outDir, "snapshot.json"), JSON.stringify(snapshot, null, 1) + "\n");

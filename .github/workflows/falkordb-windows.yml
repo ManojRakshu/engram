@@ -106,7 +106,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: redis-${{ env.REDIS_VERSION }}/src/*.exe
-          key: redis-cygwin-v3-${{ env.REDIS_VERSION }}-${{ hashFiles('scripts/windows/patch-redis.sh') }}
+          key: redis-cygwin-v3-${{ env.REDIS_VERSION }}-O2-${{ hashFiles('scripts/windows/patch-redis.sh') }}
 
       - name: Build Redis
         if: steps.redis-cache.outputs.cache-hit != 'true'
@@ -121,7 +121,7 @@ jobs:
           # USE_MALLOC_USABLE_SIZE: like glibc builds, no 8-byte size prefix on each block, so modules get
           # 16-byte-aligned memory (SSE code in RediSearch faults on 8-byte-aligned blocks). _GNU_SOURCE from
           # the start, as on Linux, so the late define in zmalloc.h doesn't hide mkostemp & co.
-          make CFLAGS="-Wno-char-subscripts -O0 -D_GNU_SOURCE -DUSE_MALLOC_USABLE_SIZE" -j$(nproc)
+          make CFLAGS="-Wno-char-subscripts -O2 -D_GNU_SOURCE -DUSE_MALLOC_USABLE_SIZE" -j$(nproc)
 
       - name: Package
         run: |

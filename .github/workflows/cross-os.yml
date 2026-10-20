@@ -87,6 +87,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          pattern: results-*
           path: res
       - run: node scripts/e2e/compare.mjs res "$GITHUB_STEP_SUMMARY"
 
