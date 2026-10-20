@@ -68,9 +68,13 @@ jobs:
       - name: peg/leg (parser generator for libcypher-parser)
         run: |
           export PATH=/usr/local/bin:/usr/bin:/bin
+          # Only libcypher-parser needs it; skip when that is already in the build cache.
+          [ -f fdb/bin/linux-x64-release/libcypher-parser/lib/src/.libs/libcypher-parser.a ] && { echo "cached"; exit 0; }
           cd /tmp
-          curl -fsSL https://www.piumarta.com/software/peg/peg-$PEG_VERSION.tar.gz | tar xz
-          cd peg-$PEG_VERSION && make && make install PREFIX=/usr/local
+          curl -fsSL --retry 4 --connect-timeout 20 https://www.piumarta.com/software/peg/peg-$PEG_VERSION.tar.gz -o peg.tgz \
+            || curl -fsSL --retry 4 https://github.com/gpakosz/peg/archive/refs/heads/master.tar.gz -o peg.tgz # mirror
+          mkdir peg && tar xzf peg.tgz -C peg --strip-components=1
+          cd peg && make && make install PREFIX=/usr/local
           which leg
 
       - name: Build FalkorDB module
