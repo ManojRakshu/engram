@@ -60,7 +60,9 @@ function changedFiles(root: string) {
 function spawnWindows(cmd: string, args: string[]) {
   let found = cmd;
   try {
-    found = execFileSync("where", [cmd], { stdio: ["ignore", "pipe", "ignore"] }).toString().split(/\r?\n/)[0].trim() || cmd;
+    // npm installs `x` (a shell script), `x.cmd` and `x.ps1`: take the first one Windows can start.
+    const hits = execFileSync("where", [cmd], { stdio: ["ignore", "pipe", "ignore"] }).toString().split(/\r?\n/).map((l) => l.trim());
+    found = hits.find((h) => /\.(exe|com|cmd|bat)$/i.test(h)) ?? cmd;
   } catch {
     /* not on PATH: let spawn report it */
   }

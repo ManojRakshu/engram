@@ -137,11 +137,14 @@ jobs:
           if ($why -notmatch "claude-code") { throw "the Claude Code session was not remembered after restart" }
           Pop-Location
 
+      - name: Collect logs
+        if: always() && steps.fdb.outputs.ready == 'true'
+        run: |
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\logs" | Out-Null
+          Copy-Item "$HOME\.engram\falkordb.log", "$env:RUNNER_TEMP\mock.log", "$env:RUNNER_TEMP\hooks.jsonl" "$env:RUNNER_TEMP\logs" -ErrorAction SilentlyContinue
+
       - uses: actions/upload-artifact@v4
         if: always() && steps.fdb.outputs.ready == 'true'
         with:
           name: e2e-logs
-          path: |
-            ~/.engram/falkordb.log
-            ${{ runner.temp }}/mock.log
-            ${{ runner.temp }}/hooks.jsonl
+          path: ${{ runner.temp }}/logs
