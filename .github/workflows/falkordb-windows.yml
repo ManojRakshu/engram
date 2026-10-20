@@ -151,7 +151,7 @@ jobs:
             cat *.stackdump
             # module+0xOFFSET lines -> function and source line in the debug build
             grep -o 'falkordb\.so+0x[0-9a-fA-F]*' *.stackdump | while read -r m; do
-              off=${m#*+}; printf '%s  ' "$m"; addr2line -f -C -e "$so" $(printf '0x%x' $((base + off))) | paste -sd' '
+              off=${m#*+}; printf '%s  ' "$m"; addr2line -f -C -e "$so" $(printf '0x%x' $((0x$base + off))) | paste -sd' '
             done
           fi
           cd ..
