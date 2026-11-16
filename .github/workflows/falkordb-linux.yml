@@ -82,6 +82,7 @@ jobs:
         run: ldd $D/falkordb.so $D/redis-server
 
       - name: Smoke test (graph, full-text, PageRank, save and restore)
+        if: matrix.glibc == 28 # arm64's module needs glibc 2.35: tested on Ubuntu 22.04 and Debian 12 below
         run: |
           set -euxo pipefail
           trap 'tail -40 /tmp/r.log' EXIT
