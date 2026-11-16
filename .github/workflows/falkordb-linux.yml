@@ -77,9 +77,13 @@ jobs:
           zip -q -r $D.zip $D
           sha256sum $D.zip | tee $D.zip.sha256
 
+      - name: Dependencies as the loader resolves them
+        run: ldd $D/falkordb.so $D/redis-server
+
       - name: Smoke test (graph, full-text, PageRank, save and restore)
         run: |
           set -euxo pipefail
+          trap 'tail -40 /tmp/r.log' EXIT
           s="$D/redis-server --port 6390 --dir /tmp --loadmodule $PWD/$D/falkordb.so --daemonize yes --logfile /tmp/r.log"
           cli="$D/redis-cli -p 6390"
           $s --save ""
