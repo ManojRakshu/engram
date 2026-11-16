@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euxo pipefail
           curl -fsSL https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz | tar xz
-          make -C redis-$REDIS_VERSION -j$(nproc) BUILD_TLS=no redis-server redis-cli > /dev/null
+          make -C redis-$REDIS_VERSION -j$(nproc) BUILD_TLS=no > /dev/null # "all": builds the deps (jemalloc) first
 
       - name: Package
         run: |
