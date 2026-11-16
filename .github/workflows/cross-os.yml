@@ -195,6 +195,7 @@ jobs:
         env:
           ANTHROPIC_BASE_URL: http://127.0.0.1:8787
           ANTHROPIC_API_KEY: sk-ant-mock
+          IS_SANDBOX: ${{ matrix.container && '1' || '' }} # containers run as root; Claude Code wants this to skip permissions there
         run: |
           curl -fsSL https://claude.ai/install.sh | bash
           export PATH="$HOME/.local/bin:$PATH" ENGRAM_HOOK_LOG="$RUNNER_TEMP/hooks.jsonl"
