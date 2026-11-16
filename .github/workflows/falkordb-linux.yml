@@ -68,6 +68,7 @@ jobs:
           cp -L /opt/ssl/lib/libssl.so.3 /opt/ssl/lib/libcrypto.so.3 $D/
           cp -L "$(ldconfig -p | awk '/libgomp\.so\.1 /{print $NF; exit}')" $D/libgomp.so.1
           patchelf --set-rpath '$ORIGIN' $D/libssl.so.3
+          chmod 755 $D/* # Redis refuses a module without execute permission
           for f in $D/*; do echo "== $f"; readelf -d "$f" | grep -E "NEEDED|RUNPATH|RPATH"; done
           # The newest glibc any file needs must not pass what this build promises.
           need=$(for f in $D/*; do objdump -T "$f" | grep -o 'GLIBC_2\.[0-9]*'; done | sort -t. -k2 -n -u | tail -1)
@@ -137,7 +138,7 @@ jobs:
         run: |
           set -eux
           D=$PWD/art/falkordb-linux-${{ matrix.arch }}
-          chmod +x $D/redis-server $D/redis-cli
+          chmod 755 $D/* # artifacts drop permissions
           if command -v docker; then exit 1; fi
           ldd --version | head -1
           $D/redis-server --version
