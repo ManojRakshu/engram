@@ -1,0 +1,165 @@
+# Packages FalkorDB for Linux older than FalkorDBLite supports (it needs glibc 2.39+, Ubuntu 24.04+), so
+# Engram runs embedded there too instead of falling back to Docker. The module is FalkorDB's own release
+# binary, unmodified (rhel8 build on x64: glibc 2.28+; arm64 build: glibc 2.35+). Redis and OpenSSL are
+# built here on glibc 2.28 (manylinux_2_28), and the zip carries the libraries the module links against.
+name: falkordb-linux
+
+on:
+  push:
+    branches: [main, linux]
+    paths: [.github/workflows/falkordb-linux.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: falkordb-linux-build
+  cancel-in-progress: true
+
+permissions:
+  actions: read # the cross-OS stage downloads this run's build
+  contents: read
+
+env:
+  FALKORDB_TAG: v4.18.3
+  REDIS_VERSION: 8.6.2 # same Redis as FalkorDBLite 0.10.0 and our Windows build
+  OPENSSL_VERSION: 3.5.9
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, runner: ubuntu-24.04, image: "quay.io/pypa/manylinux_2_28_x86_64", module: falkordb-rhel8-x64.so, glibc: 28 }
+          - { arch: arm64, runner: ubuntu-24.04-arm, image: "quay.io/pypa/manylinux_2_28_aarch64", module: falkordb-arm64v8.so, glibc: 35 }
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.image }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      D: falkordb-linux-${{ matrix.arch }}
+    steps:
+      - name: Tools
+        run: dnf install -y -q perl-IPC-Cmd perl-Time-Piece libgomp zip
+
+      - name: OpenSSL 3 (shared), on glibc 2.28
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-$OPENSSL_VERSION/openssl-$OPENSSL_VERSION.tar.gz | tar xz
+          cd openssl-$OPENSSL_VERSION
+          ./Configure --prefix=/opt/ssl --libdir=lib shared no-tests no-docs > /dev/null
+          make -j$(nproc) > /dev/null
+          make install_sw > /dev/null
+
+      - name: Redis
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz | tar xz
+          make -C redis-$REDIS_VERSION -j$(nproc) BUILD_TLS=no redis-server redis-cli > /dev/null
+
+      - name: Package
+        run: |
+          set -euxo pipefail
+          mkdir $D
+          cp redis-$REDIS_VERSION/src/redis-server redis-$REDIS_VERSION/src/redis-cli $D/
+          strip $D/redis-server $D/redis-cli
+          curl -fsSL -o $D/falkordb.so https://github.com/FalkorDB/FalkorDB/releases/download/$FALKORDB_TAG/${{ matrix.module }}
+          cp -L /opt/ssl/lib/libssl.so.3 /opt/ssl/lib/libcrypto.so.3 $D/
+          cp -L "$(ldconfig -p | awk '/libgomp\.so\.1 /{print $NF; exit}')" $D/libgomp.so.1
+          patchelf --set-rpath '$ORIGIN' $D/libssl.so.3
+          for f in $D/*; do echo "== $f"; readelf -d "$f" | grep -E "NEEDED|RUNPATH|RPATH"; done
+          # The newest glibc any file needs must not pass what this build promises.
+          need=$(for f in $D/*; do objdump -T "$f" | grep -o 'GLIBC_2\.[0-9]*'; done | sort -t. -k2 -n -u | tail -1)
+          echo "needs $need"
+          [ "${need#GLIBC_2.}" -le ${{ matrix.glibc }} ]
+          ls -la $D
+          zip -q -r $D.zip $D
+          sha256sum $D.zip | tee $D.zip.sha256
+
+      - name: Smoke test (graph, full-text, PageRank, save and restore)
+        run: |
+          set -euxo pipefail
+          s="$D/redis-server --port 6390 --dir /tmp --loadmodule $PWD/$D/falkordb.so --daemonize yes --logfile /tmp/r.log"
+          cli="$D/redis-cli -p 6390"
+          $s --save ""
+          sleep 2
+          $cli MODULE LIST | grep -q graph
+          $cli GRAPH.QUERY g "CREATE (:File {path:'a.py'})-[:DEFINES]->(:Symbol {name:'f'})-[:CALLS]->(:Symbol {name:'g'})"
+          $cli GRAPH.QUERY g "MATCH (:File)-[:DEFINES]->(s)-[:CALLS*1..2]->(t) RETURN s.name, t.name" | tee /dev/stderr | grep -qx g
+          $cli GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('Symbol', 'name')"
+          $cli GRAPH.QUERY g "CALL db.idx.fulltext.queryNodes('Symbol', 'f') YIELD node RETURN node.name" | grep -qx f
+          $cli GRAPH.QUERY g "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score RETURN node.name, score"
+          $cli SHUTDOWN SAVE || true
+          sleep 1
+          $s
+          sleep 2
+          $cli GRAPH.QUERY g "MATCH (s)-[:CALLS]->(t) RETURN count(*)" | tee /dev/stderr | grep -qx 1
+          $cli SHUTDOWN NOSAVE || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: falkordb-linux-${{ matrix.arch }}
+          path: |
+            falkordb-linux-${{ matrix.arch }}
+            falkordb-linux-${{ matrix.arch }}.zip
+            falkordb-linux-${{ matrix.arch }}.zip.sha256
+
+  # The same smoke test on stock distributions (no compilers, no Docker inside), oldest first.
+  distros:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, runner: ubuntu-24.04, image: "almalinux:8" } # glibc 2.28
+          - { arch: x64, runner: ubuntu-24.04, image: "debian:11-slim" } # 2.31
+          - { arch: x64, runner: ubuntu-24.04, image: "ubuntu:20.04" } # 2.31
+          - { arch: x64, runner: ubuntu-24.04, image: "amazonlinux:2023" } # 2.34
+          - { arch: x64, runner: ubuntu-24.04, image: "ubuntu:22.04" } # 2.35
+          - { arch: x64, runner: ubuntu-24.04, image: "debian:12-slim" } # 2.36
+          - { arch: arm64, runner: ubuntu-24.04-arm, image: "ubuntu:22.04" } # 2.35
+          - { arch: arm64, runner: ubuntu-24.04-arm, image: "debian:12-slim" } # 2.36
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.image }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: falkordb-linux-${{ matrix.arch }}
+          path: art
+      - name: ${{ matrix.image }}
+        shell: sh
+        run: |
+          set -eux
+          D=$PWD/art/falkordb-linux-${{ matrix.arch }}
+          chmod +x $D/redis-server $D/redis-cli
+          if command -v docker; then exit 1; fi
+          ldd --version | head -1
+          $D/redis-server --version
+          s="$D/redis-server --port 6390 --dir /tmp --loadmodule $D/falkordb.so --daemonize yes --logfile /tmp/r.log"
+          cli="$D/redis-cli -p 6390"
+          $s --save ""
+          sleep 2
+          cat /tmp/r.log | tail -3
+          $cli MODULE LIST | grep -q graph
+          $cli GRAPH.QUERY g "CREATE (:File {path:'a.py'})-[:DEFINES]->(:Symbol {name:'f'})-[:CALLS]->(:Symbol {name:'g'})"
+          $cli GRAPH.QUERY g "MATCH (:File)-[:DEFINES]->(s)-[:CALLS*1..2]->(t) RETURN s.name, t.name" | grep -qx g
+          $cli GRAPH.QUERY g "CALL db.idx.fulltext.createNodeIndex('Symbol', 'name')"
+          $cli GRAPH.QUERY g "CALL db.idx.fulltext.queryNodes('Symbol', 'f') YIELD node RETURN node.name" | grep -qx f
+          $cli GRAPH.QUERY g "CALL algo.pageRank('Symbol', 'CALLS') YIELD node, score RETURN node.name, score"
+          $cli SHUTDOWN SAVE || true
+          sleep 1
+          $s
+          sleep 2
+          $cli GRAPH.QUERY g "MATCH (s)-[:CALLS]->(t) RETURN count(*)" | grep -qx 1
+          $cli SHUTDOWN NOSAVE || true
+
+  # Engram itself on an older Linux with this build: the same maps and accuracy as everywhere else, and
+  # the install end to end with no Docker.
+  cross-os:
+    needs: distros
+    uses: ./.github/workflows/cross-os.yml
+    with:
+      falkordb_run: ${{ github.run_id }}
+      build: linux

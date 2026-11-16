@@ -8,6 +8,9 @@ on:
       falkordb_run:
         type: string
         required: true
+      build: # which FalkorDB build that run made
+        type: string
+        default: windows
   push:
     branches: [main, windows]
     paths: [src/**, plugin/**, bench/**, scripts/e2e/**, install.sh, install.ps1, .github/workflows/cross-os.yml]
@@ -30,8 +33,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-latest, windows-latest]
+        include:
+          - { os: ubuntu-24.04, name: Linux }
+          - { os: ubuntu-24.04, name: Linux-glibc-2.31, container: "debian:11" } # older than FalkorDBLite supports
+          - { os: macos-latest, name: macOS }
+          - { os: windows-latest, name: Windows }
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     timeout-minutes: 60
     defaults:
       run:
@@ -40,6 +48,11 @@ jobs:
       - name: Git like a default Windows install (CRLF checkouts)
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf true
+      - name: Tools a stock Debian lacks
+        if: matrix.container
+        run: |
+          apt-get update -qq && apt-get install -y -qq git curl ca-certificates > /dev/null
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -47,13 +60,21 @@ jobs:
       - run: npm ci
 
       - name: FalkorDB for Windows (the new build, when called by falkordb-windows)
-        if: runner.os == 'Windows' && inputs.falkordb_run
+        if: runner.os == 'Windows' && inputs.falkordb_run && inputs.build == 'windows'
         uses: actions/download-artifact@v4
         with:
           name: falkordb-windows-x64
           path: ${{ runner.temp }}/fdb
-      - if: runner.os == 'Windows' && inputs.falkordb_run
+      - if: runner.os == 'Windows' && inputs.falkordb_run && inputs.build == 'windows'
         run: echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP\\fdb\\falkordb-windows-x64.zip" >> "$GITHUB_ENV"
+      - name: FalkorDB for older Linux (the new build, when called by falkordb-linux)
+        if: matrix.container && inputs.build == 'linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: falkordb-linux-x64
+          path: ${{ runner.temp }}/fdb
+      - if: matrix.container && inputs.build == 'linux'
+        run: echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP/fdb/falkordb-linux-x64.zip" >> "$GITHUB_ENV"
 
       - name: Benchmark repos at their pinned commits
         run: |
@@ -63,7 +84,12 @@ jobs:
           get yt-dlp/yt-dlp yt-dlp "$YTDLP_SHA"
 
       - name: Start the embedded FalkorDB
-        run: npx tsx src/cli.ts db start
+        run: |
+          npx tsx src/cli.ts db start
+          # Embedded, never Docker: a Unix socket (loopback TCP on Windows), and no container was made.
+          cat ~/.engram/config.json
+          grep -qE '"url": ?"(unix://|falkor://default:)' ~/.engram/config.json
+          [ ! -e ~/.engram/docker-run.log ]
 
       - name: What agents are handed, for every benchmark task
         run: npx tsx scripts/e2e/snapshot.ts out click=t/click=bench/tasks.click.json networkx=t/networkx=bench/tasks.networkx.json
@@ -77,7 +103,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: results-${{ runner.os }}
+          name: results-${{ matrix.name }}
           path: out
 
   compare:
@@ -93,12 +119,16 @@ jobs:
 
   # The Windows end-to-end test (engram-windows-e2e.yml), step for step, on Linux and macOS.
   e2e:
-    if: ${{ !inputs.falkordb_run }}
+    if: ${{ inputs.build != 'windows' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-latest]
+        include:
+          - { os: ubuntu-24.04 }
+          - { os: ubuntu-24.04, container: "debian:11" } # older than FalkorDBLite supports
+          - { os: macos-latest }
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     timeout-minutes: 30
     defaults:
       run:
@@ -106,7 +136,20 @@ jobs:
     env:
       DEMO: ${{ github.workspace }}/../demo-repo
     steps:
+      - name: Tools a stock Debian lacks
+        if: matrix.container
+        run: |
+          apt-get update -qq && apt-get install -y -qq git curl ca-certificates python3 > /dev/null
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
+      - name: FalkorDB for older Linux (the new build, when called by falkordb-linux)
+        if: matrix.container && inputs.build == 'linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: falkordb-linux-x64
+          path: ${{ runner.temp }}/fdb
+      - if: matrix.container && inputs.build == 'linux'
+        run: echo "ENGRAM_FALKORDB_ZIP=$RUNNER_TEMP/fdb/falkordb-linux-x64.zip" >> "$GITHUB_ENV"
       - name: Demo repo
         run: sh scripts/e2e/demo-repo.sh "$DEMO"
 
@@ -118,6 +161,9 @@ jobs:
           cd "$DEMO"
           PATH="$HOME/.local/bin:$nonode" sh -c 'command -v node && exit 1; ENGRAM_REPO="file://$GITHUB_WORKSPACE" sh "$GITHUB_WORKSPACE/install.sh"'
           ls ~/.engram
+          # Embedded, never Docker (the runner has Docker; Engram must not use it).
+          grep -q '"url": *"unix://' ~/.engram/config.json
+          [ ! -e ~/.engram/docker-run.log ]
 
       - name: CLI (engram from ~/.local/bin)
         run: |
@@ -136,6 +182,7 @@ jobs:
           $node scripts/e2e/mcp-check.mjs gemini ~/.gemini/settings.json "$DEMO"
 
       - name: engram run with an npm-installed CLI agent
+        if: ${{ !matrix.container }} # no npm in a stock Debian; this step doesn't touch FalkorDB
         run: |
           npm install -g --prefix "$HOME/.npm-global" ./scripts/e2e/fake-agent
           export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH" FAKE_AGENT_OUT="$RUNNER_TEMP/fake-agent-prompt.txt"
