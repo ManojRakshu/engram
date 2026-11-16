@@ -1,0 +1,46 @@
+# Publishes the zips a falkordb-linux run built and tested, byte for byte, as a GitHub release
+# (the tag is pushed first). The checksums must match the ones pinned in src/embedded.ts.
+name: falkordb-linux-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: falkordb-linux run whose build to publish
+        required: true
+      tag:
+        description: release tag, e.g. falkordb-linux-v4.18.3-1
+        required: true
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: falkordb-linux-*
+          path: art
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Checksums match src/embedded.ts
+        run: |
+          for a in x64 arm64; do
+            z=art/falkordb-linux-$a/falkordb-linux-$a.zip
+            sum=$(sha256sum "$z" | cut -d' ' -f1)
+            echo "$a $sum"
+            grep -q "linux(\"$a\", \"$sum\"" src/embedded.ts
+          done
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.tag }}" --verify-tag \
+            --title "FalkorDB 4.18.3 for older Linux (${{ inputs.tag }})" \
+            --notes "FalkorDB v4.18.3 for Linux older than FalkorDBLite supports: x64 with glibc 2.28+, arm64 with glibc 2.35+. The module is FalkorDB's own release binary, unmodified; Redis 8.6.2 and OpenSSL 3.5 are built on glibc 2.28. Built and tested in run ${{ inputs.run_id }} ([workflow](.github/workflows/falkordb-linux.yml)). Engram downloads it automatically and checks its sha256." \
+            art/falkordb-linux-x64/falkordb-linux-x64.zip art/falkordb-linux-x64/falkordb-linux-x64.zip.sha256 \
+            art/falkordb-linux-arm64/falkordb-linux-arm64.zip art/falkordb-linux-arm64/falkordb-linux-arm64.zip.sha256

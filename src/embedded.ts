@@ -53,8 +53,8 @@ const BUILDS: Record<string, Build> = {
     "bfe1f47ae03decdc0ad111ec82606bac82ee6cdd7fea04cbcff1283608cc2d2e",
     39,
   ),
-  "linux-x64-older": linux("x64", "LINUX_X64_SHA256", 28),
-  "linux-arm64-older": linux("arm64", "LINUX_ARM64_SHA256", 35),
+  "linux-x64-older": linux("x64", "0b727568110e5f70dcc3091baff2017c3099f657885637cdbe25922ea8c9016c", 28),
+  "linux-arm64-older": linux("arm64", "7b6c8a9283a6c467b51603ca9b490949c7cbebf7759a5578391d53994fcd19b7", 35),
   "win32-x64": {
     url: `${OURS}/falkordb-windows-v${WIN_BUILD}/falkordb-windows-x64.zip`,
     sha256: "0a4a89e77c895b3e28600d48900b4cb2bff352f34167aa35e73a41b9169493ff",

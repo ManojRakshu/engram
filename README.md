@@ -116,7 +116,8 @@ session.
 
 ## Install in one command
 
-Nothing to install first: no Docker, no database server, no Node.js, no API keys.
+Nothing to install first on macOS (Apple silicon), Windows x64 and Linux (glibc 2.28+, e.g. Ubuntu 20.04 and later):
+no Docker, no database server, no Node.js, no API keys (details under **Platforms** below).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh
@@ -168,8 +169,11 @@ workspace roots, so editors that start servers outside the repo still work.
 **A shared or hosted FalkorDB** (a team-wide memory, or FalkorDB Cloud): `engram setup --url falkor://user:pass@host:port`,
 or set `FALKORDB_URL`.
 
-**Platforms.** Embedded FalkorDB covers macOS on Apple silicon, Linux x64/arm64 with glibc 2.39+ (Ubuntu 24.04+),
-and Windows x64. On other systems, Engram runs FalkorDB in Docker if it's available, or you pass `--url`.
+**Platforms.** FalkorDB runs embedded, with no Docker, on macOS on Apple silicon, on Windows x64, and on Linux x64 with
+glibc 2.28+ or arm64 with glibc 2.35+. On Linux older than Ubuntu 24.04, FalkorDBLite doesn't run, so Engram uses
+[my build](.github/workflows/falkordb-linux.yml) of the same FalkorDB release; CI starts it on AlmaLinux 8, Debian 11 and 12,
+Ubuntu 20.04 and 22.04, and Amazon Linux 2023. Intel Macs and Alpine have no embedded build: there Engram runs
+FalkorDB in Docker if it's available, or you pass `--url`.
 On every code change, [CI](.github/workflows/cross-os.yml) indexes the same repos on Linux, macOS and Windows and checks that
 the maps, rankings and blast radius agents get are byte-identical, and that the 30 yt-dlp issues score the same.
 Windows is slower: a map takes 0.09–1.1 s there against 0.02–0.5 s on Linux and macOS (CI runners).
