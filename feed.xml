@@ -5,8 +5,15 @@
   <link href="https://manojrakshu.github.io/engram/feed.xml" rel="self"/>
   <link href="https://manojrakshu.github.io/engram/"/>
   <id>https://manojrakshu.github.io/engram/</id>
-  <updated>2026-10-20T00:00:00Z</updated>
+  <updated>2026-11-16T00:00:00Z</updated>
   <author><name>Manoj Shetty</name><uri>https://github.com/ManojRakshu</uri></author>
+  <entry>
+    <title>No Docker on older Linux</title>
+    <link href="https://github.com/ManojRakshu/engram#install-in-one-command"/>
+    <id>https://manojrakshu.github.io/engram/#linux-glibc-2.28</id>
+    <updated>2026-11-16T00:00:00Z</updated>
+    <summary>FalkorDBLite's Linux build needs Ubuntu 24.04 or newer, so on older Linux Engram used Docker. It now runs my build of the same FalkorDB release there instead: Linux x64 with glibc 2.28+ and arm64 with glibc 2.35+. CI starts it on AlmaLinux 8, Debian 11 and 12, Ubuntu 20.04 and 22.04 and Amazon Linux 2023, and Engram's output on Ubuntu 22.04 matches Linux, macOS and Windows byte for byte.</summary>
+  </entry>
   <entry>
     <title>Native Windows</title>
     <link href="https://github.com/ManojRakshu/engram#install-in-one-command"/>

@@ -10,7 +10,7 @@ Engram turns a repository into one FalkorDB graph: the code, its git history, an
 No LLM calls of its own. Every answer is a Cypher query.
 `curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh`
 
-Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.
+Run it inside a repo. No Docker (macOS on Apple silicon; Linux with glibc 2.28+, e.g. Ubuntu 20.04 and later), no database server, no API keys. Node.js is fetched once if missing.
 `irm https://raw.githubusercontent.com/ManojRakshu/engram/main/install.ps1 | iex`
 
 In PowerShell, inside a repo. Native: no WSL, no Docker, no Node.js needed. FalkorDB runs from my Windows build of FalkorDB 4.18.3, pinned by sha256.
@@ -198,7 +198,7 @@ Scope differs: codebase-memory-mcp also indexes docs and config; Engram indexes 
 
 ### Where Engram is behind
 - Fewer agents wired automatically: 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.
-- Platforms: embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or `--url`. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.
+- Platforms: embedded FalkorDB covers Apple-silicon macOS, Windows x64, Linux x64 with glibc 2.28+ and arm64 with glibc 2.35+, started in CI on AlmaLinux 8, Debian 11 and 12, Ubuntu 20.04 and 22.04 and Amazon Linux 2023. Intel Macs and Alpine fall back to Docker or `--url`. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.
 - Languages: Python, TypeScript and JavaScript.
 - Peak indexing RAM is slightly higher (242 MB vs 221 MB).
 
@@ -244,7 +244,7 @@ Whatever you inject gets re-read on every later turn. My first version gave the 
 
 **Q: Do I need Docker or a database server?**
 
-No. Engram runs FalkorDBLite (https://docs.falkordb.com/operations/falkordblite/), FalkorDB's own embedded build, pinned and checked against its sha256. It runs as one small server per user on an owner-only Unix socket in `~/.engram`, shared by every agent on the machine. If it isn't up yet, the agent works as usual and Engram switches on at the next prompt.
+No, on macOS (Apple silicon), Windows x64 and Linux with glibc 2.28+ (2.35+ on arm64). Engram runs FalkorDBLite (https://docs.falkordb.com/operations/falkordblite/), FalkorDB's own embedded build, or on Windows and on Linux older than Ubuntu 24.04 my build of the same FalkorDB release, pinned and checked against its sha256. Intel Macs and Alpine need Docker or a FalkorDB URL. It runs as one small server per user on an owner-only Unix socket in `~/.engram`, shared by every agent on the machine. If it isn't up yet, the agent works as usual and Engram switches on at the next prompt.
 
 **Q: How does it stay current while I edit?**
 

@@ -65,7 +65,7 @@
       "about": {"@id": "https://manojrakshu.github.io/engram/#software"},
       "primaryImageOfPage": "https://manojrakshu.github.io/engram/og.png",
       "datePublished": "2026-10-19",
-      "dateModified": "2026-10-20",
+      "dateModified": "2026-11-16",
       "author": {"@id": "https://manojrakshu.github.io/engram/#person"}
     },
     {
@@ -107,7 +107,7 @@
       "@type": "FAQPage",
       "mainEntity": [
         {"@type": "Question", "name": "Does Engram call an LLM?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every answer is a parameterised Cypher query on FalkorDB. It adds only the ~200-token map it injects, and it works with whatever model your agent uses."}},
-        {"@type": "Question", "name": "Do I need Docker or a database server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Engram runs FalkorDBLite, FalkorDB's own embedded build, as one small server per user on a Unix socket in ~/.engram. Node.js is fetched once if it is missing."}},
+        {"@type": "Question", "name": "Do I need Docker or a database server?", "acceptedAnswer": {"@type": "Answer", "text": "No, on macOS (Apple silicon), Windows x64 and Linux with glibc 2.28+ (2.35+ on arm64). Engram runs FalkorDB embedded, as one small server per user in ~/.engram: FalkorDBLite, FalkorDB's own build, or on Windows and older Linux my build of the same FalkorDB release. Intel Macs and Alpine need Docker or a FalkorDB URL. Node.js is fetched once if it is missing."}},
         {"@type": "Question", "name": "Which languages does it index?", "acceptedAnswer": {"@type": "Answer", "text": "Python, TypeScript and JavaScript today, through tree-sitter. A language is a parser adapter."}},
         {"@type": "Question", "name": "Did it ever make things worse?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. It missed one fix in 36 on click (35/36 vs 36/36), an early version of memory confused the next task, and pasting 1,600 tokens of code raised token use. All of it is documented in the repo."}},
         {"@type": "Question", "name": "Is it free and open source?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, MIT licensed. Source, benchmark harness and raw results are on GitHub."}}
@@ -370,7 +370,7 @@ footer p{margin:6px 0}
   </div>
   <div class="panel" id="p-sh" role="tabpanel" aria-labelledby="t-sh">
     <div class="cmd"><code>curl -fsSL https://raw.githubusercontent.com/ManojRakshu/engram/main/install.sh | sh</code><button type="button" data-copy>COPY</button></div>
-    <p class="note">Run it inside a repo. No Docker, no database server, no API keys. Node.js is fetched once if missing.</p>
+    <p class="note">Run it inside a repo. No Docker (macOS on Apple silicon; Linux with glibc 2.28+, e.g. Ubuntu 20.04 and later), no database server, no API keys. Node.js is fetched once if missing.</p>
   </div>
   <div class="panel" id="p-win" role="tabpanel" aria-labelledby="t-win" hidden>
     <div class="cmd"><code>irm https://raw.githubusercontent.com/ManojRakshu/engram/main/install.ps1 | iex</code><button type="button" data-copy>COPY</button></div>
@@ -632,7 +632,7 @@ RETURN l.owner = $me AS got</pre>
     <h3>Where Engram is behind</h3>
     <ul class="tight">
       <li><b>Fewer agents wired automatically:</b> 9, against codebase-memory-mcp's 45. Any MCP client still works with one line of config.</li>
-      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS, Linux x64/arm64 with glibc 2.39+ and Windows x64. Intel Macs and older Linux fall back to Docker or <code>--url</code>. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.</li>
+      <li><b>Platforms:</b> embedded FalkorDB covers Apple-silicon macOS, Windows x64, Linux x64 with glibc 2.28+ and arm64 with glibc 2.35+, started in CI on AlmaLinux 8, Debian 11 and 12, Ubuntu 20.04 and 22.04 and Amazon Linux 2023. Intel Macs and Alpine fall back to Docker or <code>--url</code>. Windows gives identical results but is slower: a map takes 0.09–1.1 s, against 0.02–0.5 s on Linux and macOS.</li>
       <li><b>Languages:</b> Python, TypeScript and JavaScript.</li>
       <li><b>Peak indexing RAM</b> is slightly higher (242 MB vs 221 MB).</li>
     </ul>
@@ -680,7 +680,7 @@ engram setup --remove &amp;&amp; engram db stop</pre>
   <h2 id="h-faq"><span class="sec">§8</span> Questions</h2>
   <details><summary>Does Engram call an LLM?</summary><p>No. Every answer is a parameterised Cypher query on FalkorDB. It adds only the ~200-token map it injects (and ~14 tokens per tool hint), and it works with whatever model your agent uses.</p></details>
   <details><summary>Why a map and not the code itself?</summary><p>Whatever you inject gets re-read on every later turn. My first version gave the agent 1,600 tokens of code and history, and token use went up. Claude Code has to Read a file before editing it anyway, so pasting code never saved a call. Six lines of exact locations did.</p></details>
-  <details><summary>Do I need Docker or a database server?</summary><p>No. Engram runs <a href="https://docs.falkordb.com/operations/falkordblite/">FalkorDBLite</a>, FalkorDB's own embedded build, pinned and checked against its sha256. It runs as one small server per user on an owner-only Unix socket in <code>~/.engram</code>, shared by every agent on the machine. If it isn't up yet, the agent works as usual and Engram switches on at the next prompt.</p></details>
+  <details><summary>Do I need Docker or a database server?</summary><p>No, on macOS (Apple silicon), Windows x64 and Linux with glibc 2.28+ (2.35+ on arm64). Engram runs <a href="https://docs.falkordb.com/operations/falkordblite/">FalkorDBLite</a>, FalkorDB's own embedded build, or on Windows and on Linux older than Ubuntu 24.04 my build of the same FalkorDB release, pinned and checked against its sha256. Intel Macs and Alpine need Docker or a FalkorDB URL. It runs as one small server per user on an owner-only Unix socket in <code>~/.engram</code>, shared by every agent on the machine. If it isn't up yet, the agent works as usual and Engram switches on at the next prompt.</p></details>
   <details><summary>How does it stay current while I edit?</summary><p>Every edit re-indexes that file, and each new prompt re-checks file hashes, so indexing is incremental. Git history is mined for authors and co-change.</p></details>
   <details><summary>What stops two agents editing the same file?</summary><p>Before an edit, the agent's session claims the file in one Cypher write. If another running session holds it, the edit is blocked with a message saying who has it. Claude Code, pi and any MCP agent share the same claims.</p></details>
   <details><summary>Why no language servers or embeddings?</summary><p>Language servers want hundreds of MB, and a June 2026 study found LSP tools added 6–118% tokens on code-localization tasks (<a href="https://arxiv.org/abs/2608.13568">arXiv 2608.13568</a>). Bugs here are found by structure (calls, history), and FalkorDB has a vector index if embeddings are ever worth adding.</p></details>
